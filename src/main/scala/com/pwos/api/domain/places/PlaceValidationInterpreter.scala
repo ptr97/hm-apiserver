@@ -6,7 +6,7 @@ import cats.implicits._
 import com.pwos.api.domain.{PlaceAlreadyExistsError, PlaceNotFoundError}
 
 
-class PlaceValidationInterpreter[F[_] : Monad](placeDAO: PlaceDAOAlgebra[F]) extends PlaceValidationAlgebra[F] {
+final class PlaceValidationInterpreter[F[_] : Monad](placeDAO: PlaceDAOAlgebra[F]) extends PlaceValidationAlgebra[F] {
 
   override def doesNotExists(place: Place): EitherT[F, PlaceAlreadyExistsError, Unit] = EitherT {
     placeDAO.findByName(place.name).map {

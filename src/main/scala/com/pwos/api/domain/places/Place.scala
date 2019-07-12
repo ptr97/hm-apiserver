@@ -3,6 +3,8 @@ package com.pwos.api.domain.places
 
 case class Place(
                   name: String,
-                  height: Double,
+                  latitude: Double,
+                  longitude: Double,
+                  elevation: Double,
                   id: Option[Long] = None,
                 )

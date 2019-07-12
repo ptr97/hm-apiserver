@@ -22,5 +22,6 @@ final class SlickPlaceDAOInterpreter(implicit ec: ExecutionContext) extends Plac
 
 
 object SlickPlaceDAOInterpreter {
-  def apply(implicit executionContext: ExecutionContext): SlickPlaceDAOInterpreter = new SlickPlaceDAOInterpreter()
+  def apply(implicit executionContext: ExecutionContext): SlickPlaceDAOInterpreter =
+    new SlickPlaceDAOInterpreter()
 }
