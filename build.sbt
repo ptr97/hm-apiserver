@@ -8,6 +8,7 @@ lazy val akkaVersion              = "2.5.22"
 lazy val scalaTestVersion         = "3.0.8"
 lazy val circeVersion             = "0.11.1"
 lazy val slickVersion             = "3.3.1"
+lazy val slf4jVersion             = "1.7.12"
 lazy val catsVersion              = "1.6.0"
 lazy val mySqlConnectorVersion    = "5.1.34"
 lazy val pureConfigVersion        = "0.11.1"
@@ -16,12 +17,14 @@ lazy val pureConfigVersion        = "0.11.1"
 libraryDependencies ++= Seq(
   "com.typesafe.akka"       %%  "akka-http"             % akkaHttpVersion,
   "com.typesafe.akka"       %%  "akka-stream"           % akkaVersion,
+  "de.heikoseeberger"       %%  "akka-http-circe"       % "1.27.0",
 
   "org.typelevel"           %%  "cats-core"             % catsVersion,
   
   "com.typesafe.slick"      %%  "slick"                 % slickVersion,
   "com.typesafe.slick"      %%  "slick-hikaricp"        % slickVersion,
   "mysql"                   %   "mysql-connector-java"  % mySqlConnectorVersion,
+  "org.slf4j"               %   "slf4j-simple"          % slf4jVersion,
 
   "com.github.pureconfig"   %%  "pureconfig"            % pureConfigVersion
 )

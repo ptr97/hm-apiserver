@@ -1,9 +1,9 @@
 package com.pwos.api
 
-import com.pwos.api.config.ApplicationConfig
+import com.pwos.api.config.Config
 
 
 object AppLauncher extends App {
-  val config: ApplicationConfig = ApplicationConfig.unsafeLoadConfig
+  val config: Config = Config.unsafeLoadConfig
   Server.run(config)
 }

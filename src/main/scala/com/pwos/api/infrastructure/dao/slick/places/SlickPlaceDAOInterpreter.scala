@@ -9,7 +9,7 @@ import scala.concurrent.ExecutionContext
 final class SlickPlaceDAOInterpreter(implicit ec: ExecutionContext) extends PlaceDAOAlgebra[DBIO] {
   override def create(place: Place): DBIO[Place] = ???
 
-  override def get(id: Long): DBIO[Option[Place]] = ???
+  override def get(id: Long): DBIO[Option[Place]] = DBIO.successful(Some(Place("place 1", 10.0, 10.0, 10.0)))
 
   override def update(place: Place): DBIO[Option[Place]] = ???
 

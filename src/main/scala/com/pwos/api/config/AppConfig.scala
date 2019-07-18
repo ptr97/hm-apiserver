@@ -2,20 +2,33 @@ package com.pwos.api.config
 
 import pureconfig.generic.auto._
 import pureconfig.error.ConfigReaderFailures
+import slick.jdbc.MySQLProfile
+import slick.jdbc.MySQLProfile.backend.Database
 
 
-case class ApplicationConfig(database: DatabaseConfig, server: ServerConfig)
-case class DatabaseConfig(profile: String, dataSourceClass: String, connection: DatabaseConnection)
-case class DatabaseConnection(url: String, driver: String, user: String, password: String)
+case class Config(api: ApplicationConfig, database: Database)
+case class ApplicationConfig(server: ServerConfig)
 case class ServerConfig(host: String, port: Int)
 
 
+object Config {
+  def unsafeLoadConfig: Config = {
+    Config(ApplicationConfig.unsafeLoadAppConfig, DatabaseConnection.connectToDatabase)
+  }
+}
+
+object DatabaseConnection {
+  def connectToDatabase: MySQLProfile.backend.Database = {
+    Database.forConfig(path = "database")
+  }
+}
+
 object ApplicationConfig {
-  def loadConfig: Either[ConfigReaderFailures, ApplicationConfig] = {
+  def loadAppConfig: Either[ConfigReaderFailures, ApplicationConfig] = {
     pureconfig.loadConfig[ApplicationConfig]
   }
 
-  def unsafeLoadConfig: ApplicationConfig = {
+  def unsafeLoadAppConfig: ApplicationConfig = {
     pureconfig.loadConfig[ApplicationConfig] match {
       case Right(conf) => conf
       case Left(ex) =>
@@ -33,14 +46,6 @@ object ApplicationConfig {
       defaultConfig
     }
 
-    loadConfig.fold(handleFailure, identity)
-  }
-
-  def recoverWithDefaultConfig: ApplicationConfig = {
-    val defaultConfig: ApplicationConfig = ApplicationConfig(
-      DatabaseConfig("slick.jdbc.MySQLProfile$", "slick.jdbc.DatabaseUrlDataSource",
-        DatabaseConnection("jdbc:mysql://localhost:3306/hm_db", "com.mysql.cj.jdbc.Driver", "piotr", "password123")),
-      ServerConfig("127.0.0.1", 7007))
-    recoverWith(defaultConfig)
+    loadAppConfig.fold(handleFailure, identity)
   }
 }
