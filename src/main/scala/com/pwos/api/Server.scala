@@ -5,16 +5,19 @@ import akka.http.scaladsl.Http
 import akka.http.scaladsl.server.Route
 import akka.stream.ActorMaterializer
 import com.pwos.api.config.Config
-import com.pwos.api.domain.places.{PlaceService, PlaceValidationInterpreter}
+import com.pwos.api.domain.places.PlaceService
+import com.pwos.api.domain.places.PlaceValidationInterpreter
 import com.pwos.api.infrastructure.dao.slick.DBIOMonad._
 import com.pwos.api.infrastructure.dao.slick.places.SlickPlaceDAOInterpreter
 import com.pwos.api.infrastructure.http.PlaceController
 import slick.dbio.DBIO
 import slick.jdbc.MySQLProfile.backend.Database
 
+import scala.concurrent.Await
+import scala.concurrent.ExecutionContext
 import scala.concurrent.duration.Duration
-import scala.concurrent.{Await, ExecutionContext}
-import scala.util.{Failure, Success}
+import scala.util.Failure
+import scala.util.Success
 
 
 object Server {

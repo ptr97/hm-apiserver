@@ -1,7 +1,8 @@
 package com.pwos.api.domain.places
 
 import cats.data.EitherT
-import com.pwos.api.domain.{PlaceAlreadyExistsError, PlaceNotFoundError}
+import com.pwos.api.domain.PlaceAlreadyExistsError
+import com.pwos.api.domain.PlaceNotFoundError
 
 
 trait PlaceValidationAlgebra[F[_]] {

@@ -3,7 +3,8 @@ package com.pwos.api.domain.places
 import cats.Monad
 import cats.data.EitherT
 import cats.implicits._
-import com.pwos.api.domain.{PlaceAlreadyExistsError, PlaceNotFoundError}
+import com.pwos.api.domain.PlaceAlreadyExistsError
+import com.pwos.api.domain.PlaceNotFoundError
 
 
 final class PlaceValidationInterpreter[F[_] : Monad](placeDAO: PlaceDAOAlgebra[F]) extends PlaceValidationAlgebra[F] {
