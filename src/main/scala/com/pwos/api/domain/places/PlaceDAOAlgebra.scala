@@ -8,7 +8,7 @@ trait PlaceDAOAlgebra[F[_]] {
 
   def update(place: Place): F[Option[Place]]
 
-  def delete(id: Long): F[Option[Place]]
+  def delete(id: Long): F[Boolean]
 
   def list(pageSize: Int, offset: Int): F[List[Place]]
 

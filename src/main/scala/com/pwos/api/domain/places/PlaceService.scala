@@ -1,8 +1,10 @@
 package com.pwos.api.domain.places
 
-import cats.{Functor, Monad}
 import cats.data.EitherT
-import com.pwos.api.domain.{PlaceAlreadyExistsError, PlaceNotFoundError}
+import cats.Functor
+import cats.Monad
+import com.pwos.api.domain.PlaceAlreadyExistsError
+import com.pwos.api.domain.PlaceNotFoundError
 
 
 class PlaceService[F[_]](placeDAO: PlaceDAOAlgebra[F], placeValidation: PlaceValidationAlgebra[F]) {
@@ -20,9 +22,9 @@ class PlaceService[F[_]](placeDAO: PlaceDAOAlgebra[F], placeValidation: PlaceVal
     updatedPlace <- EitherT.fromOptionF(placeDAO.update(place), PlaceNotFoundError)
   } yield updatedPlace
 
-  def delete(id: Long)(implicit M: Monad[F]): EitherT[F, PlaceNotFoundError.type, Place] = for {
+  def delete(id: Long)(implicit M: Monad[F]): EitherT[F, PlaceNotFoundError.type, Boolean] = for {
     _ <- placeValidation.exists(Some(id))
-    deletedPlace <- EitherT.fromOptionF(placeDAO.delete(id), PlaceNotFoundError)
+    deletedPlace <- EitherT.liftF(placeDAO.delete(id))
   } yield deletedPlace
 
   def list(pageSize: Int, offset: Int): F[List[Place]] =
