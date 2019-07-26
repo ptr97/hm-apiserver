@@ -32,9 +32,9 @@ final class SlickPlaceDAOInterpreter(implicit ec: ExecutionContext) extends Plac
 
   override def list(pageSize: Option[Int], offset: Option[Int]): DBIO[List[Place]] = {
     for {
-      allPlaces: List[Place] <- places.result.map(_.toList)
-      withOffset: List[Place] = offset.map(off => allPlaces.drop(off)).getOrElse(allPlaces)
-      result: List[Place] = pageSize.map(size => withOffset.take(size)).getOrElse(allPlaces)
+      allPlaces <- places.result.map(_.toList)
+      withOffset = offset.map(off => allPlaces.drop(off)).getOrElse(allPlaces)
+      result = pageSize.map(size => withOffset.take(size)).getOrElse(allPlaces)
     } yield result
   }
 
