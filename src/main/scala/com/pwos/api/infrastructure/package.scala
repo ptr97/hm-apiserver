@@ -3,7 +3,8 @@ package com.pwos.api
 import slick.dbio.DBIO
 import slick.jdbc.MySQLProfile.api._
 
-import scala.concurrent.{ExecutionContext, Future}
+import scala.concurrent.ExecutionContext
+import scala.concurrent.Future
 
 
 package object infrastructure {

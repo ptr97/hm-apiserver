@@ -2,21 +2,17 @@ package com.pwos.api.infrastructure.http
 
 import akka.http.scaladsl.server.Directives._
 import akka.http.scaladsl.server.Route
-import com.pwos.api.domain.PlaceAlreadyExistsError
-import com.pwos.api.domain.PlaceNotFoundError
 import com.pwos.api.domain.places.Place
 import com.pwos.api.domain.places.PlaceService
 import com.pwos.api.infrastructure.dao.slick.DBIOMonad._
 import com.pwos.api.infrastructure.implicits._
 import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport._
-import io.circe.Json
 import io.circe.generic.auto._
-import io.circe.syntax._
 import slick.dbio.DBIO
 import slick.jdbc.MySQLProfile.api._
 
 import scala.concurrent.ExecutionContext
-import scala.concurrent.Future
+import scala.language.postfixOps
 
 
 class PlaceController(placeService: PlaceService[DBIO])(implicit ec: ExecutionContext, database: Database) {
@@ -29,62 +25,67 @@ class PlaceController(placeService: PlaceService[DBIO])(implicit ec: ExecutionCo
   def addPlace: Route = path(PLACES) {
     post {
       entity(as[Place]) { place: Place =>
-        val createdPlaceDBIO: DBIO[Either[PlaceAlreadyExistsError, Place]] = placeService.create(place).value
-        val createdPlaceFuture: Future[Either[PlaceAlreadyExistsError, Place]] = createdPlaceDBIO.unsafeRun
-        val response: Future[Json] = createdPlaceFuture.map {
-          case Right(createdPlace) => {
-            val t = createdPlace.asJson
-            println(t)
-            t
+        complete {
+          placeService.create(place).value.unsafeRun map {
+            case Right(createdPlace) => HttpOps.created(createdPlace)
+            case Left(placeAlreadyExistsError) => HttpOps.badRequest(placeAlreadyExistsError)
           }
-          case Left(placeAlreadyExistsError) => placeAlreadyExistsError.asJson
         }
-
-        complete(response)
       }
     }
   }
 
   def getPlace: Route = path(PLACES / LongNumber) { placeId: Long =>
     get {
-      val placeDBIO: DBIO[Either[PlaceNotFoundError.type, Place]] = placeService.get(placeId).value
-      val placeFuture: Future[Either[PlaceNotFoundError.type, Place]] = placeDBIO.unsafeRun
-
-      val response = placeFuture.map {
-        case Right(place) => {
-          val t = place.asJson
-          println(t)
-          t
-        }
-        case Left(placeNotFoundError) => {
-          val t = placeNotFoundError.asJson
-          println(t)
-          t
+      complete {
+        placeService.get(placeId).value.unsafeRun map {
+          case Right(place) => HttpOps.ok(place)
+          case Left(placeNotFoundError) => HttpOps.notFound(placeNotFoundError)
         }
       }
-
-      complete(response)
     }
   }
 
-  def updatePlace: Route = path(PLACES / LongNumber) { placeId =>
+  def updatePlace: Route = path(PLACES / LongNumber) { placeId: Long =>
     put {
-      complete(s"update place with id = $placeId")
+      entity(as[Place]) { place: Place =>
+        complete {
+          val placeToUpdate: Place = place.copy(id = Some(placeId))
+          placeService.update(placeToUpdate).value.unsafeRun map {
+            case Right(updatedPlace) => HttpOps.ok(updatedPlace)
+            case Left(placeNotFoundError) => HttpOps.notFound(placeNotFoundError)
+          }
+        }
+      }
     }
   }
 
-  def deletePlace: Route = path(PLACES / LongNumber) { placeId =>
+  def deletePlace: Route = path(PLACES / LongNumber) { placeId: Long =>
     delete {
-      complete(s"delete place with id = $placeId")
+      complete {
+        placeService.delete(placeId).value.unsafeRun map {
+          case Right(true) => HttpOps.ok("deleted")
+          case Right(false) => HttpOps.internalServerError("Something went wrong")
+          case Left(placeNotFoundError) => HttpOps.notFound(placeNotFoundError)
+        }
+      }
     }
   }
 
   def listPlaces: Route = path(PLACES) {
     get {
-      complete("places")
+      parameters('page.as[Int] ?, 'pageSize.as[Int] ?, 'sortBy.as[String] ?, 'filterBy.as[String] ?, 'search.as[String] ?) {
+        (page, pageSize, sortBy, filterBy, search) =>
+          println(s"$page, $pageSize, $sortBy, $filterBy, $search")
+          complete {
+            val offset: Option[Int] = pageSize.flatMap(ps => page.map(p => ps * p))
+            placeService.list(pageSize, offset).unsafeRun map (HttpOps.ok(_))
+          }
+      }
     }
   }
 }
+
 
 object PlaceController {
   val PLACES: String = "places"
