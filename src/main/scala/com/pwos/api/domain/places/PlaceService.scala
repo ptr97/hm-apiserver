@@ -27,7 +27,7 @@ class PlaceService[F[_]](placeDAO: PlaceDAOAlgebra[F], placeValidation: PlaceVal
     deletedPlace <- EitherT.liftF(placeDAO.delete(id))
   } yield deletedPlace
 
-  def list(pageSize: Int, offset: Int): F[List[Place]] =
+  def list(pageSize: Option[Int], offset: Option[Int]): F[List[Place]] =
     placeDAO.list(pageSize, offset)
 }
 

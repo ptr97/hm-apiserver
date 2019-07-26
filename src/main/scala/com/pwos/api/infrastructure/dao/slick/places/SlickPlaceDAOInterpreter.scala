@@ -30,8 +30,12 @@ final class SlickPlaceDAOInterpreter(implicit ec: ExecutionContext) extends Plac
     places.filter(_.id === id).delete.map(_ == 1)
   }
 
-  override def list(pageSize: Int, offset: Int): DBIO[List[Place]] = {
-    places.result.map(_.toList).map(_.drop(offset)).map(_.take(pageSize))
+  override def list(pageSize: Option[Int], offset: Option[Int]): DBIO[List[Place]] = {
+    for {
+      allPlaces: List[Place] <- places.result.map(_.toList)
+      withOffset: List[Place] = offset.map(off => allPlaces.drop(off)).getOrElse(allPlaces)
+      result: List[Place] = pageSize.map(size => withOffset.take(size)).getOrElse(allPlaces)
+    } yield result
   }
 
   override def findByName(name: String): DBIO[Option[Place]] = {

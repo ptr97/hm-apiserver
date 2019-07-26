@@ -10,7 +10,7 @@ trait PlaceDAOAlgebra[F[_]] {
 
   def delete(id: Long): F[Boolean]
 
-  def list(pageSize: Int, offset: Int): F[List[Place]]
+  def list(pageSize: Option[Int], offset: Option[Int]): F[List[Place]]
 
   def findByName(name: String): F[Option[Place]]
 }
