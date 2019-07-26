@@ -17,7 +17,7 @@ import scala.language.postfixOps
 
 class PlaceController(placeService: PlaceService[DBIO])(implicit ec: ExecutionContext, database: Database) {
 
-  val placeRoutes: Route = listPlaces ~ getPlace ~ addPlace
+  val placeRoutes: Route = listPlaces ~ getPlace ~ addPlace ~ updatePlace ~ deletePlace
 
   import PlaceController.PLACES
 
