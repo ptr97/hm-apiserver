@@ -6,6 +6,7 @@ import akka.http.scaladsl.model.MediaTypes.`application/json`
 import akka.http.scaladsl.model.StatusCode
 import akka.http.scaladsl.model.StatusCodes
 import akka.http.scaladsl.model.headers.RawHeader
+import com.pwos.api.domain.HelloMountainsError
 import io.circe.Encoder
 import io.circe.generic.auto._
 import io.circe.syntax._
@@ -39,9 +40,9 @@ package object http {
         entity = HttpEntity(`application/json`, SuccessResponse(value).toJson),
         headers = List(RawHeader("Access-Control-Allow-Origin", "*")))
 
-    private def clientErrorResponse[T : Encoder](value: T, statusCode: StatusCode = StatusCodes.BadRequest): HttpResponse =
+    private def clientErrorResponse[T <: HelloMountainsError : Encoder](value: T, statusCode: StatusCode = StatusCodes.BadRequest): HttpResponse =
       HttpResponse(status = statusCode,
-        entity = HttpEntity(`application/json`, ErrorResponse(value).toJson),
+        entity = HttpEntity(`application/json`, ErrorResponse(value.message).toJson),
         headers = List(RawHeader("Access-Control-Allow-Origin", "*")))
 
     private def internalErrorResponse[T : Encoder](value: T, statusCode: StatusCode = StatusCodes.InternalServerError): HttpResponse =
@@ -54,13 +55,13 @@ package object http {
 
     def created[T : Encoder](value: T): HttpResponse = successResponse(value, StatusCodes.Created)
 
-    def badRequest[T : Encoder](value: T): HttpResponse = clientErrorResponse(value)
+    def badRequest[T <: HelloMountainsError : Encoder](value: T): HttpResponse = clientErrorResponse(value)
 
-    def forbidden[T : Encoder](value: T): HttpResponse = clientErrorResponse(value, StatusCodes.Forbidden)
+    def forbidden[T <: HelloMountainsError : Encoder](value: T): HttpResponse = clientErrorResponse(value, StatusCodes.Forbidden)
 
-    def notFound[T : Encoder](value: T): HttpResponse = clientErrorResponse(value, StatusCodes.NotFound)
+    def notFound[T <: HelloMountainsError : Encoder](value: T): HttpResponse = clientErrorResponse(value, StatusCodes.NotFound)
 
-    def internalServerError[T: Encoder](value : T): HttpResponse = internalErrorResponse(value)
+    def internalServerError[T : Encoder](value : T): HttpResponse = internalErrorResponse(value)
   }
 
 }
