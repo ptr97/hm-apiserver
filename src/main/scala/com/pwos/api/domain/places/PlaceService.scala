@@ -1,8 +1,9 @@
 package com.pwos.api.domain.places
 
-import cats.data.EitherT
 import cats.Functor
 import cats.Monad
+import cats.data.EitherT
+import cats.data.IdT
 import com.pwos.api.domain.PlaceAlreadyExistsError
 import com.pwos.api.domain.PlaceNotFoundError
 
@@ -17,18 +18,42 @@ class PlaceService[F[_]](placeDAO: PlaceDAOAlgebra[F], placeValidation: PlaceVal
   def get(id: Long)(implicit F: Functor[F]): EitherT[F, PlaceNotFoundError.type, Place] =
     EitherT.fromOptionF(placeDAO.get(id), PlaceNotFoundError)
 
-  def update(place: Place)(implicit M: Monad[F]): EitherT[F, PlaceNotFoundError.type, Place] = for {
-    _ <- placeValidation.exists(place.id)
-    updatedPlace <- EitherT.fromOptionF(placeDAO.update(place), PlaceNotFoundError)
-  } yield updatedPlace
+  def update(id: Long, placeUpdateModel: PlaceUpdateModel)(implicit M: Monad[F]): EitherT[F, PlaceNotFoundError.type, Place] = {
+    type PlaceUpdate = Place => Option[Place]
+
+    val updateName: PlaceUpdate = place => placeUpdateModel.name.map(name => place.copy(name = name))
+    val updateLatitude: PlaceUpdate = place => placeUpdateModel.latitude.map(latitude => place.copy(latitude = latitude))
+    val updateLongitude: PlaceUpdate = place => placeUpdateModel.longitude.map(longitude => place.copy(longitude = longitude))
+    val updateElevation: PlaceUpdate = place => placeUpdateModel.elevation.map(elevation => place.copy(elevation = elevation))
+
+    val updates: List[PlaceUpdate] = List(updateName, updateLatitude, updateLongitude, updateElevation)
+
+    val updatePlaceData: Place => Place = oldPlace => {
+      updates.foldLeft(oldPlace)((place, updateFun) => updateFun(place).getOrElse(place))
+    }
+
+    for {
+      _ <- placeValidation.exists(Option(id))
+      placeToUpdate <- get(id)
+      updatedPlace = updatePlaceData(placeToUpdate)
+      updatedPlace <- EitherT.fromOptionF(placeDAO.update(updatedPlace), PlaceNotFoundError)
+    } yield updatedPlace
+  }
 
   def delete(id: Long)(implicit M: Monad[F]): EitherT[F, PlaceNotFoundError.type, Boolean] = for {
-    _ <- placeValidation.exists(Some(id))
+    _ <- placeValidation.exists(Option(id))
     deletedPlace <- EitherT.liftF(placeDAO.delete(id))
   } yield deletedPlace
 
-  def list(pageSize: Option[Int], offset: Option[Int]): F[List[Place]] =
-    placeDAO.list(pageSize, offset)
+  def list(pageSize: Option[Int], offset: Option[Int])(implicit M: Monad[F]): F[List[Place]] = {
+    val places: IdT[F, List[Place]] = for {
+      allPlaces <- IdT(placeDAO.all).map(_.sortBy(_.id))
+      withOffset = offset.map(off => allPlaces.drop(off)).getOrElse(allPlaces)
+      result = pageSize.map(size => withOffset.take(size)).getOrElse(withOffset)
+    } yield result
+
+    places.value
+  }
 }
 
 
