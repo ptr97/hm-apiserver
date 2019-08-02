@@ -8,3 +8,11 @@ case class Place(
                   elevation: Double,
                   id: Option[Long] = None,
                 )
+
+
+case class PlaceUpdateModel(
+                             name: Option[String] = None,
+                             latitude: Option[Double] = None,
+                             longitude: Option[Double] = None,
+                             elevation: Option[Double] = None,
+                           )

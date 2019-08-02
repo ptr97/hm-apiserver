@@ -4,6 +4,7 @@ import akka.http.scaladsl.server.Directives._
 import akka.http.scaladsl.server.Route
 import com.pwos.api.domain.places.Place
 import com.pwos.api.domain.places.PlaceService
+import com.pwos.api.domain.places.PlaceUpdateModel
 import com.pwos.api.infrastructure.dao.slick.DBIOMonad._
 import com.pwos.api.infrastructure.implicits._
 import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport._
@@ -48,10 +49,9 @@ class PlaceController(placeService: PlaceService[DBIO])(implicit ec: ExecutionCo
 
   def updatePlace: Route = path(PLACES / LongNumber) { placeId: Long =>
     put {
-      entity(as[Place]) { place: Place =>
+      entity(as[PlaceUpdateModel]) { placeUpdateModel: PlaceUpdateModel =>
         complete {
-          val placeToUpdate: Place = place.copy(id = Some(placeId))
-          placeService.update(placeToUpdate).value.unsafeRun map {
+          placeService.update(placeId, placeUpdateModel).value.unsafeRun map {
             case Right(updatedPlace) => HttpOps.ok(updatedPlace)
             case Left(placeNotFoundError) => HttpOps.notFound(placeNotFoundError)
           }
@@ -64,7 +64,7 @@ class PlaceController(placeService: PlaceService[DBIO])(implicit ec: ExecutionCo
     delete {
       complete {
         placeService.delete(placeId).value.unsafeRun map {
-          case Right(true) => HttpOps.ok("deleted")
+          case Right(true) => HttpOps.ok("Place deleted")
           case Right(false) => HttpOps.internalServerError("Something went wrong")
           case Left(placeNotFoundError) => HttpOps.notFound(placeNotFoundError)
         }
