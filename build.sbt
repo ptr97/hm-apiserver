@@ -7,6 +7,7 @@ lazy val akkaHttpVersion          = "10.1.8"
 lazy val akkaVersion              = "2.5.22"
 lazy val akkaHttpCirceVersion     = "1.27.0"
 lazy val scalaTestVersion         = "3.0.8"
+lazy val scalaCheckVersion        = "1.14.0"
 lazy val circeVersion             = "0.11.1"
 lazy val slickVersion             = "3.3.1"
 lazy val slf4jVersion             = "1.7.12"
@@ -27,7 +28,10 @@ libraryDependencies ++= Seq(
   "mysql"                   %   "mysql-connector-java"  % mySqlConnectorVersion,
   "org.slf4j"               %   "slf4j-simple"          % slf4jVersion,
 
-  "com.github.pureconfig"   %%  "pureconfig"            % pureConfigVersion
+  "com.github.pureconfig"   %%  "pureconfig"            % pureConfigVersion,
+
+  "org.scalacheck"          %%  "scalacheck"            % scalaCheckVersion       % Test,
+  "org.scalatest"           %%  "scalatest"             % scalaTestVersion        % Test
 )
 
 libraryDependencies ++= Seq(
