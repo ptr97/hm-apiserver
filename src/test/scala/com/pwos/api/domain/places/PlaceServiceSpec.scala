@@ -10,7 +10,7 @@ import org.scalatest.Matchers
 
 class PlaceServiceSpec extends FunSpec with Matchers {
 
-  private def mock: (MemoryPlaceDAOInterpreter, PlaceService[Id]) = {
+  private def getTestResources: (MemoryPlaceDAOInterpreter, PlaceService[Id]) = {
     val memoryPlaceDAO = MemoryPlaceDAOInterpreter()
     val placeValidation: PlaceValidationInterpreter[Id] = PlaceValidationInterpreter(memoryPlaceDAO)
     val placeService: PlaceService[Id] = PlaceService(memoryPlaceDAO, placeValidation)
@@ -25,7 +25,7 @@ class PlaceServiceSpec extends FunSpec with Matchers {
 
     describe("Adding new place") {
     it("should add new place") {
-      val (placeDAO, placeService) = mock
+      val (placeDAO, placeService) = getTestResources
       val addPlaceResult: Id[Either[PlaceAlreadyExistsError, Place]] = placeService.create(place).value
       val placeFromDb: Id[Place] = placeDAO.findByName(place.name).get
 
@@ -38,7 +38,7 @@ class PlaceServiceSpec extends FunSpec with Matchers {
     }
 
     it("should not add new place when exactly the same place exists") {
-      val (placeDAO, placeService) = mock
+      val (placeDAO, placeService) = getTestResources
       placeDAO.create(place)
       val addPlaceResult = placeService.create(place).value
 
@@ -46,7 +46,7 @@ class PlaceServiceSpec extends FunSpec with Matchers {
     }
 
     it("should not add new place when place with same name exists") {
-      val (placeDAO, placeService) = mock
+      val (placeDAO, placeService) = getTestResources
       placeDAO.create(place)
       val placeWithSameName: Place = Place(place.name, 10.10, 10.10, 100)
       val addPlaceResult = placeService.create(placeWithSameName).value
@@ -57,7 +57,7 @@ class PlaceServiceSpec extends FunSpec with Matchers {
 
   describe("Getting single place by id") {
     it("should return place when place exists") {
-      val (placeDAO, placeService) = mock
+      val (placeDAO, placeService) = getTestResources
       val placeFromDb: Id[Place] = placeDAO.create(place)
       val getResult: Id[Either[PlaceNotFoundError.type, Place]] = placeService.get(placeFromDb.id.get).value
 
@@ -70,7 +70,7 @@ class PlaceServiceSpec extends FunSpec with Matchers {
     }
 
     it("should return PlaceNotFoundError when place does not exist") {
-      val (placeDAO, placeService) = mock
+      val (placeDAO, placeService) = getTestResources
       val notExistingId: Long = placeDAO.getLastId + 1
 
       val getResult: Id[Either[PlaceNotFoundError.type, Place]] = placeService.get(notExistingId).value
@@ -80,7 +80,7 @@ class PlaceServiceSpec extends FunSpec with Matchers {
 
   describe("Updating place") {
     it("should update place all place details when specified") {
-      val (placeDAO, placeService) = mock
+      val (placeDAO, placeService) = getTestResources
       val placeFromDb: Id[Place] = placeDAO.create(place)
       val placeUpdateModel = PlaceUpdateModel(name = Some(secondPlace.name),
         latitude = Some(secondPlace.latitude),
@@ -99,7 +99,7 @@ class PlaceServiceSpec extends FunSpec with Matchers {
     }
 
     it("should update only place name when specified") {
-      val (placeDAO, placeService) = mock
+      val (placeDAO, placeService) = getTestResources
       val placeFromDb: Id[Place] = placeDAO.create(place)
       val placeUpdateModel = PlaceUpdateModel(name = Some(secondPlace.name))
 
@@ -109,7 +109,7 @@ class PlaceServiceSpec extends FunSpec with Matchers {
     }
 
     it("should update only place latitude when specified") {
-      val (placeDAO, placeService) = mock
+      val (placeDAO, placeService) = getTestResources
       val placeFromDb: Id[Place] = placeDAO.create(place)
       val placeUpdateModel = PlaceUpdateModel(latitude = Some(secondPlace.latitude))
 
@@ -119,7 +119,7 @@ class PlaceServiceSpec extends FunSpec with Matchers {
     }
 
     it("should not update place name when place does not exist") {
-      val (placeDAO, placeService) = mock
+      val (placeDAO, placeService) = getTestResources
       val placeUpdateModel = PlaceUpdateModel(elevation = Some(secondPlace.elevation))
       val notExistingId: Long = placeDAO.getLastId + 1
 
@@ -131,7 +131,7 @@ class PlaceServiceSpec extends FunSpec with Matchers {
 
   describe("Deleting place") {
     it("should delete place when it exists") {
-      val (placeDAO, placeService) = mock
+      val (placeDAO, placeService) = getTestResources
       val placeFromDb: Id[Place] = placeDAO.create(place)
       val deleteResult: Id[Either[PlaceNotFoundError.type, Boolean]] = placeService.delete(placeFromDb.id.get).value
 
@@ -139,7 +139,7 @@ class PlaceServiceSpec extends FunSpec with Matchers {
     }
 
     it("should not delete place when it does not exist") {
-      val (placeDAO, placeService) = mock
+      val (placeDAO, placeService) = getTestResources
       val notExistingId: Long = placeDAO.getLastId + 1
 
       val deleteResult: Id[Either[PlaceNotFoundError.type, Boolean]] = placeService.delete(notExistingId).value
@@ -150,7 +150,7 @@ class PlaceServiceSpec extends FunSpec with Matchers {
 
   describe("Getting list of places") {
     it("should return list of places when there are some places") {
-      val (placeDAO, placeService) = mock
+      val (placeDAO, placeService) = getTestResources
       val p1: Id[Place] = placeDAO.create(place)
       val p2: Id[Place] = placeDAO.create(secondPlace)
       val p3: Id[Place] = placeDAO.create(thirdPlace)
@@ -162,14 +162,14 @@ class PlaceServiceSpec extends FunSpec with Matchers {
     }
 
     it("should return empty list of places when there are not any places") {
-      val (_, placeService) = mock
+      val (_, placeService) = getTestResources
       val getAllPlacesResult: Id[List[Place]] = placeService.list(None, None)
 
       getAllPlacesResult shouldBe List.empty
     }
 
     it("should return list of places with proper page size") {
-      val (placeDAO, placeService) = mock
+      val (placeDAO, placeService) = getTestResources
       val p1: Id[Place] = placeDAO.create(place)
       val p2: Id[Place] = placeDAO.create(secondPlace)
       val p3: Id[Place] = placeDAO.create(thirdPlace)
@@ -181,7 +181,7 @@ class PlaceServiceSpec extends FunSpec with Matchers {
     }
 
     it("should return list of places with proper offset") {
-      val (placeDAO, placeService) = mock
+      val (placeDAO, placeService) = getTestResources
       val p1: Id[Place] = placeDAO.create(place)
       val p2: Id[Place] = placeDAO.create(secondPlace)
       val p3: Id[Place] = placeDAO.create(thirdPlace)
@@ -193,7 +193,7 @@ class PlaceServiceSpec extends FunSpec with Matchers {
     }
 
     it("should return list of places with proper page size and offset") {
-      val (placeDAO, placeService) = mock
+      val (placeDAO, placeService) = getTestResources
       val p1: Id[Place] = placeDAO.create(place)
       val p2: Id[Place] = placeDAO.create(secondPlace)
       val p3: Id[Place] = placeDAO.create(thirdPlace)
