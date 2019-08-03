@@ -36,8 +36,8 @@ class PlaceService[F[_]](placeDAO: PlaceDAOAlgebra[F], placeValidation: PlaceVal
       _ <- placeValidation.exists(Option(id))
       placeToUpdate <- get(id)
       updatedPlace = updatePlaceData(placeToUpdate)
-      updatedPlace <- EitherT.fromOptionF(placeDAO.update(updatedPlace), PlaceNotFoundError)
-    } yield updatedPlace
+      placeUpdateResult <- EitherT.fromOptionF(placeDAO.update(updatedPlace), PlaceNotFoundError)
+    } yield placeUpdateResult
   }
 
   def delete(id: Long)(implicit M: Monad[F]): EitherT[F, PlaceNotFoundError.type, Boolean] = for {
