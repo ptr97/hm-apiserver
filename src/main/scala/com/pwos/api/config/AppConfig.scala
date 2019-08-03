@@ -15,13 +15,22 @@ object Config {
   def unsafeLoadConfig: Config = {
     Config(ApplicationConfig.unsafeLoadAppConfig, DatabaseConnection.connectToDatabase)
   }
+
+  def unsafeLoadTestConfig: Config = {
+    Config(ApplicationConfig.unsafeLoadAppConfig, DatabaseConnection.connectToTestDatabase)
+  }
 }
 
 object DatabaseConnection {
   def connectToDatabase: MySQLProfile.backend.Database = {
     Database.forConfig(path = "database")
   }
+
+  def connectToTestDatabase: MySQLProfile.backend.Database = {
+    Database.forConfig(path = "testdatabase")
+  }
 }
+
 
 object ApplicationConfig {
   def loadAppConfig: Either[ConfigReaderFailures, ApplicationConfig] = {
