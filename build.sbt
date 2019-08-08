@@ -14,6 +14,7 @@ lazy val slf4jVersion             = "1.7.12"
 lazy val catsVersion              = "1.6.0"
 lazy val mySqlConnectorVersion    = "8.0.16"
 lazy val pureConfigVersion        = "0.11.1"
+lazy val jwtCirceVersion          = "3.0.1"
 
 
 libraryDependencies ++= Seq(
@@ -30,7 +31,9 @@ libraryDependencies ++= Seq(
 
   "com.github.pureconfig"   %%  "pureconfig"            % pureConfigVersion,
 
-  "org.scalacheck"          %%  "scalacheck"            % scalaCheckVersion       % Test,
+  "com.pauldijou"           %%  "jwt-circe"             % jwtCirceVersion,
+
+  "org.scalacheck"          %%  "scalacheck"            % scalaCheckVersion       % Test, 
   "org.scalatest"           %%  "scalatest"             % scalaTestVersion        % Test
 )
 
