@@ -6,18 +6,22 @@ import slick.jdbc.MySQLProfile
 import slick.jdbc.MySQLProfile.backend.Database
 
 
-case class Config(api: ApplicationConfig, database: Database)
+case class Config(api: ApplicationConfig, database: Database, jwtConfig: JwtConfig)
+
 case class ApplicationConfig(server: ServerConfig)
 case class ServerConfig(host: String, port: Int)
+
+case class JwtConfig(jwt: JwtDetails)
+case class JwtDetails(secret: String, validFor: Long)
 
 
 object Config {
   def unsafeLoadConfig: Config = {
-    Config(ApplicationConfig.unsafeLoadAppConfig, DatabaseConnection.connectToDatabase)
+    Config(ApplicationConfig.unsafeLoadAppConfig, DatabaseConnection.connectToDatabase, JwtConfig.unsafeLoadJwtConfig)
   }
 
   def unsafeLoadTestConfig: Config = {
-    Config(ApplicationConfig.unsafeLoadAppConfig, DatabaseConnection.connectToTestDatabase)
+    Config(ApplicationConfig.unsafeLoadAppConfig, DatabaseConnection.connectToTestDatabase, JwtConfig.unsafeLoadJwtConfig)
   }
 }
 
@@ -38,7 +42,7 @@ object ApplicationConfig {
   }
 
   def unsafeLoadAppConfig: ApplicationConfig = {
-    pureconfig.loadConfig[ApplicationConfig] match {
+    loadAppConfig match {
       case Right(conf) => conf
       case Left(ex) =>
         println(s"Error loading configuration: $ex.\nProgram will now exit.")
@@ -56,5 +60,36 @@ object ApplicationConfig {
     }
 
     loadAppConfig.fold(handleFailure, identity)
+  }
+}
+
+object JwtConfig {
+  def loadJwtConfig: Either[ConfigReaderFailures, JwtConfig] = {
+    pureconfig.loadConfig[JwtConfig]
+  }
+
+  def unsafeLoadJwtConfig: JwtConfig = {
+    loadJwtConfig match {
+      case Right(conf) => conf
+      case Left(ex) =>
+        println(s"Error loading configuration: $ex.\nProgram will now exit.")
+        throw new Exception(ex.toString)
+    }
+  }
+
+  def recoverWith(defaultConfig: JwtConfig): JwtConfig = {
+    val handleFailure: ConfigReaderFailures => JwtConfig = fails => {
+      println(
+        s"""[ERROR] Failed to load config from application.conf
+           |$fails
+           |Setting default ApplicationConfig.""".stripMargin)
+      defaultConfig
+    }
+
+    loadJwtConfig.fold(handleFailure, identity)
+  }
+
+  def withFallbackDefaultConfig: JwtConfig = {
+    recoverWith(JwtConfig(JwtDetails("secret_value", 3600)))
   }
 }
