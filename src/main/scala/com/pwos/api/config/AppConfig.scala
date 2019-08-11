@@ -6,7 +6,7 @@ import slick.jdbc.MySQLProfile
 import slick.jdbc.MySQLProfile.backend.Database
 
 
-case class Config(api: ApplicationConfig, database: Database, jwtConfig: JwtConfig)
+case class Config(api: ApplicationConfig, database: Database)
 
 case class ApplicationConfig(server: ServerConfig)
 case class ServerConfig(host: String, port: Int)
@@ -17,11 +17,11 @@ case class JwtDetails(secret: String, validFor: Long)
 
 object Config {
   def unsafeLoadConfig: Config = {
-    Config(ApplicationConfig.unsafeLoadAppConfig, DatabaseConnection.connectToDatabase, JwtConfig.unsafeLoadJwtConfig)
+    Config(ApplicationConfig.unsafeLoadAppConfig, DatabaseConnection.connectToDatabase)
   }
 
   def unsafeLoadTestConfig: Config = {
-    Config(ApplicationConfig.unsafeLoadAppConfig, DatabaseConnection.connectToTestDatabase, JwtConfig.unsafeLoadJwtConfig)
+    Config(ApplicationConfig.unsafeLoadAppConfig, DatabaseConnection.connectToTestDatabase)
   }
 }
 
