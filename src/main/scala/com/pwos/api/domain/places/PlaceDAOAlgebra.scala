@@ -2,6 +2,7 @@ package com.pwos.api.domain.places
 
 
 trait PlaceDAOAlgebra[F[_]] {
+
   def create(place: Place): F[Place]
 
   def get(id: Long): F[Option[Place]]
@@ -13,4 +14,5 @@ trait PlaceDAOAlgebra[F[_]] {
   def all: F[List[Place]]
 
   def findByName(name: String): F[Option[Place]]
+
 }
