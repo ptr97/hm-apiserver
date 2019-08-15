@@ -31,6 +31,7 @@ object UserModels {
   case class UpdateUserStatusModel(banned: Boolean)
 
   case class ChangePasswordModel(oldPassword: String, newPassword: String, newPasswordCheck: String)
+
 }
 
 case class UserInfo(id: Long, userName: String, email: String, role: UserRole.Value, banned: Boolean, deleted: Boolean)
