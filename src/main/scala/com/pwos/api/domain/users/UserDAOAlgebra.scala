@@ -3,7 +3,7 @@ package com.pwos.api.domain.users
 
 trait UserDAOAlgebra[F[_]] {
 
-  def create(user: User): F[Option[User]]
+  def create(user: User): F[User]
 
   def get(id: Long): F[Option[User]]
 
