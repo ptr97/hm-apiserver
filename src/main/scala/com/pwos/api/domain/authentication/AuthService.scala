@@ -3,7 +3,7 @@ package com.pwos.api.domain.authentication
 import cats.Functor
 import cats.Monad
 import cats.data.EitherT
-import com.pwos.api.domain.UserNotFoundError
+import com.pwos.api.domain.HelloMountainsError._
 import com.pwos.api.domain.users.User
 import com.pwos.api.domain.users.UserDAOAlgebra
 import com.pwos.api.domain.users.UserModels.LoginModel

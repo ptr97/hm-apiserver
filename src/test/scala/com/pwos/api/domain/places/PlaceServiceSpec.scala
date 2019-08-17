@@ -1,8 +1,7 @@
 package com.pwos.api.domain.places
 
 import cats.Id
-import com.pwos.api.domain.PlaceAlreadyExistsError
-import com.pwos.api.domain.PlaceNotFoundError
+import com.pwos.api.domain.HelloMountainsError._
 import com.pwos.api.infrastructure.dao.memory.MemoryPlaceDAOInterpreter
 import org.scalatest.FunSpec
 import org.scalatest.Matchers

@@ -4,8 +4,7 @@ import cats.Functor
 import cats.Monad
 import cats.data.EitherT
 import cats.data.IdT
-import com.pwos.api.domain.PlaceAlreadyExistsError
-import com.pwos.api.domain.PlaceNotFoundError
+import com.pwos.api.domain.HelloMountainsError._
 
 
 class PlaceService[F[_]](placeDAO: PlaceDAOAlgebra[F], placeValidation: PlaceValidationAlgebra[F]) {

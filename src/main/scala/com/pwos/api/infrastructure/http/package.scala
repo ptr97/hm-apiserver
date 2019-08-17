@@ -6,7 +6,7 @@ import akka.http.scaladsl.model.MediaTypes.`application/json`
 import akka.http.scaladsl.model.StatusCode
 import akka.http.scaladsl.model.StatusCodes
 import akka.http.scaladsl.model.headers.RawHeader
-import com.pwos.api.domain.HelloMountainsError
+import com.pwos.api.domain.HelloMountainsError._
 import io.circe.Encoder
 import io.circe.generic.auto._
 import io.circe.syntax._

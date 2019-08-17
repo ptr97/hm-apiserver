@@ -1,8 +1,7 @@
 package com.pwos.api.domain.places
 
 import cats.data.EitherT
-import com.pwos.api.domain.PlaceAlreadyExistsError
-import com.pwos.api.domain.PlaceNotFoundError
+import com.pwos.api.domain.HelloMountainsError._
 
 
 trait PlaceValidationAlgebra[F[_]] {
