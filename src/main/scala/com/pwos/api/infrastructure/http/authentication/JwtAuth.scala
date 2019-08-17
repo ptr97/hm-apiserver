@@ -6,11 +6,16 @@ import com.pwos.api.domain.users.UserInfo
 import com.pwos.api.domain.users.UserRole
 import io.circe.Decoder
 import io.circe.Encoder
+import io.circe.Json
+import io.circe.ParsingFailure
 import io.circe.generic.auto._
+import io.circe.jawn.parse
 import io.circe.syntax._
 import pdi.jwt.JwtAlgorithm
 import pdi.jwt.JwtCirce
 import pdi.jwt.JwtClaim
+
+import scala.language.postfixOps
 
 
 case class JsonWebToken(token: String)
@@ -41,8 +46,10 @@ object JwtAuth {
     jwtClaim.expiration filter { expirationTimestamp: Long =>
       expirationTimestamp > DateTime.now.clicks
     } flatMap { _ =>
-      val tokenJson = jwtClaim.content.asJson
-      tokenJson.as[UserInfo].toOption
+      val maybeToken: Either[ParsingFailure, Json] = parse(jwtClaim.content)
+      maybeToken.flatMap { token =>
+        token.as[UserInfo]
+      } toOption
     }
   }
 
@@ -50,7 +57,7 @@ object JwtAuth {
     val jwtClaim: JwtClaim = JwtClaim(
       expiration = Some(DateTime.now.clicks + validFor),
       issuedAt = Some(DateTime.now.clicks),
-      content = userInfo.toString
+      content = userInfo.asJson.toString
     )
     val token: String = JwtCirce.encode(claim = jwtClaim, key = secretKey, algorithm = hashAlgorithm)
     JsonWebToken(token)
