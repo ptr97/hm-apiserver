@@ -4,6 +4,7 @@ import cats.Functor
 import cats.Monad
 import cats.data.EitherT
 import com.pwos.api.domain.HelloMountainsError._
+import com.pwos.api.domain.authentication.PasswordService.Password
 import com.pwos.api.domain.users.User
 import com.pwos.api.domain.users.UserDAOAlgebra
 import com.pwos.api.domain.users.UserModels.LoginModel
@@ -18,17 +19,27 @@ class AuthService[F[_]](userDAO: UserDAOAlgebra[F], userValidation: UserValidati
     EitherT.fromOptionF(userDAO.get(id), UserNotFoundError)
   }
 
-  def logIn(loginModel: LoginModel)(implicit M: Monad[F]): EitherT[F, UserNotFoundError.type, JsonWebToken] = {
+  def logIn(loginModel: LoginModel)(implicit M: Monad[F]): EitherT[F, UserValidationError, JsonWebToken] = {
     val userByNameOrByEmail: String => EitherT[F, UserNotFoundError.type, User] = userNameOrEmail =>
       EitherT.fromOptionF(userDAO.findByName(userNameOrEmail), UserNotFoundError) orElse
         EitherT.fromOptionF(userDAO.findByEmail(userNameOrEmail), UserNotFoundError)
 
+    val validatePassword: (String, Password) => EitherT[F, UserValidationError, Unit] = (plainPassword, hashedPassword) => {
+      if (PasswordService.compare(plainPassword, hashedPassword)) {
+        EitherT.rightT(())
+      } else {
+        EitherT.leftT(IncorrectCredentials)
+      }
+    }
+
     for {
       user <- userByNameOrByEmail(loginModel.userNameOrEmail)
+      _ <- validatePassword(loginModel.password, user.password)
       userInfo = user.buildUserInfo
-      token <- EitherT.fromOption(userInfo.map(info => JwtAuth.decodeJwt(info)), UserNotFoundError)
+      token <- EitherT.fromOption(userInfo.map(info => JwtAuth.decodeJwt(info)), UserNotFoundError: UserValidationError)
     } yield token
   }
+
 
 //  def refreshToken() = ???
 

@@ -15,7 +15,7 @@ lazy val catsVersion              = "1.6.0"
 lazy val mySqlConnectorVersion    = "8.0.16"
 lazy val pureConfigVersion        = "0.11.1"
 lazy val jwtCirceVersion          = "3.0.1"
-
+lazy val bcryptVersion            = "0.4"
 
 libraryDependencies ++= Seq(
   "com.typesafe.akka"       %%  "akka-http"             % akkaHttpVersion,
@@ -32,6 +32,8 @@ libraryDependencies ++= Seq(
   "com.github.pureconfig"   %%  "pureconfig"            % pureConfigVersion,
 
   "com.pauldijou"           %%  "jwt-circe"             % jwtCirceVersion,
+
+  "org.mindrot"             %   "jbcrypt"               % bcryptVersion,
 
   "org.scalacheck"          %%  "scalacheck"            % scalaCheckVersion       % Test, 
   "org.scalatest"           %%  "scalatest"             % scalaTestVersion        % Test

@@ -15,6 +15,10 @@ object HelloMountainsError {
     override def message: String = "User does not exist."
   }
 
+  case object IncorrectCredentials extends UserValidationError {
+    override def message: String = "Provided credentials are invalid."
+  }
+
   case class IncorrectEmailError(incorrectEmail: String) extends UserValidationError {
     override def message: String = s"Provided email: $incorrectEmail is incorrect email address."
   }

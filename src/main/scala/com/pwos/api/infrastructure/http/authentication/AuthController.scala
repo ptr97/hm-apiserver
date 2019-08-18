@@ -41,3 +41,8 @@ class AuthController(authService: AuthService[DBIO])(implicit ec: ExecutionConte
 //  }
 
 }
+
+object AuthController {
+  def apply(authService: AuthService[DBIO])(implicit ec: ExecutionContext, database: Database): AuthController =
+    new AuthController(authService)
+}

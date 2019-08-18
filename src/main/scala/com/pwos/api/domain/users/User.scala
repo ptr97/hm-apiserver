@@ -1,22 +1,20 @@
 package com.pwos.api.domain.users
 
+import com.pwos.api.domain.authentication.PasswordService.Password
+
 
 case class User(
                  userName: String,
                  email: String,
-                 password: User.Password,
+                 password: Password,
                  role: UserRole.Value = UserRole.User,
                  banned: Boolean = false,
                  deleted: Boolean = false,
-                 id: Option[Long]
+                 id: Option[Long] = None
                ) {
   def toView: Option[UserView] = id.map { id => UserView(id, userName, email) }
 
   def buildUserInfo: Option[UserInfo] = id.map { id => UserInfo(id, userName, email, role, banned, deleted) }
-}
-
-object User {
-  type Password = String
 }
 
 
