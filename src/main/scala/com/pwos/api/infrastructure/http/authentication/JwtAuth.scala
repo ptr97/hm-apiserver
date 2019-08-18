@@ -54,9 +54,11 @@ object JwtAuth {
   }
 
   def decodeJwt(userInfo: UserInfo): JsonWebToken = {
+    val now: Long = DateTime.now.clicks / 1000
+
     val jwtClaim: JwtClaim = JwtClaim(
-      expiration = Some(DateTime.now.clicks + validFor),
-      issuedAt = Some(DateTime.now.clicks),
+      expiration = Some(now + validFor),
+      issuedAt = Some(now),
       content = userInfo.asJson.toString
     )
     val token: String = JwtCirce.encode(claim = jwtClaim, key = secretKey, algorithm = hashAlgorithm)
