@@ -26,40 +26,56 @@ package object http {
       def toJson: String
     }
 
-    case class SuccessResponse[T : Encoder](data: T, version: String = "0.1", success: Boolean = true) extends ResponseModel {
+    case class SuccessResponse[T: Encoder](data: T, version: String = "0.1", success: Boolean = true) extends ResponseModel {
       override def toJson: String = this.asJson.spaces2
     }
 
-    case class ErrorResponse[T : Encoder](error: T, version: String = "0.1", success: Boolean = false) extends ResponseModel {
+    case class ErrorResponse[T: Encoder](error: T, version: String = "0.1", success: Boolean = false) extends ResponseModel {
       override def toJson: String = this.asJson.spaces2
     }
+
   }
-
 
 
   object HttpOps {
 
     import HttpResponses._
 
-    private def successResponse[T : Encoder](value: T, statusCode: StatusCode = StatusCodes.OK): HttpResponse =
+    private def logResponse[T: Encoder](entity: T, statusCode: StatusCode): Unit = {
+      val resStartSeparator: String = s"""${separator("-", 20)}  RESPONSE  ${separator("-", 19)}"""
+      val resEndSeparator: String = separator("-", 51)
+
+      println(resStartSeparator)
+      println(s"""code: $statusCode""")
+      println(s"""${entity.asJson}""")
+      println(resEndSeparator)
+    }
+
+    private def successResponse[T: Encoder](value: T, statusCode: StatusCode = StatusCodes.OK): HttpResponse = {
+      logResponse(value, statusCode)
       HttpResponse(status = statusCode,
         entity = HttpEntity(`application/json`, SuccessResponse(value).toJson),
         headers = List(RawHeader("Access-Control-Allow-Origin", "*")))
+    }
 
-    private def clientErrorResponse[T <: HelloMountainsError : Encoder](value: T, statusCode: StatusCode = StatusCodes.BadRequest): HttpResponse =
+    private def clientErrorResponse[T <: HelloMountainsError : Encoder](value: T, statusCode: StatusCode = StatusCodes.BadRequest): HttpResponse = {
+      logResponse(value, statusCode)
       HttpResponse(status = statusCode,
         entity = HttpEntity(`application/json`, ErrorResponse(value.message).toJson),
         headers = List(RawHeader("Access-Control-Allow-Origin", "*")))
+    }
 
-    private def internalErrorResponse[T : Encoder](value: T, statusCode: StatusCode = StatusCodes.InternalServerError): HttpResponse =
+    private def internalErrorResponse[T: Encoder](value: T, statusCode: StatusCode = StatusCodes.InternalServerError): HttpResponse = {
+      logResponse(value, statusCode)
       HttpResponse(status = statusCode,
         entity = HttpEntity(`application/json`, ErrorResponse(value).toJson),
         headers = List(RawHeader("Access-Control-Allow-Origin", "*")))
+    }
 
 
-    def ok[T : Encoder](value: T): HttpResponse = successResponse(value)
+    def ok[T: Encoder](value: T): HttpResponse = successResponse(value)
 
-    def created[T : Encoder](value: T): HttpResponse = successResponse(value, StatusCodes.Created)
+    def created[T: Encoder](value: T): HttpResponse = successResponse(value, StatusCodes.Created)
 
     def badRequest[T <: HelloMountainsError : Encoder](value: T): HttpResponse = clientErrorResponse(value)
 
@@ -67,7 +83,7 @@ package object http {
 
     def notFound[T <: HelloMountainsError : Encoder](value: T): HttpResponse = clientErrorResponse(value, StatusCodes.NotFound)
 
-    def internalServerError[T : Encoder](value : T): HttpResponse = internalErrorResponse(value)
+    def internalServerError[T: Encoder](value: T): HttpResponse = internalErrorResponse(value)
 
 
     def withRequestLogging: Directive0 = {
@@ -91,9 +107,8 @@ package object http {
           } getOrElse "Not provided"
         }
 
-        val separator: (String, Int) => String = (s, times) => s * times
         val reqStartSeparator = s"""${separator("-", 20)}  REQUEST  ${separator("-", 20)}"""
-        val reqEndSeparator = separator("-", 51)
+        val reqEndSeparator: String = separator("-", 51)
 
         println(reqStartSeparator)
         println(s"User Info: ${userInfoPrettyPrint(extractUserInfoFromRequest(request))}")
@@ -106,5 +121,7 @@ package object http {
       }
     }
   }
+
+  private def separator(s: String, times: Int): String = s * times
 
 }
