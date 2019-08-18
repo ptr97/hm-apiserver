@@ -44,7 +44,7 @@ object JwtAuth {
 
   def parseToken(jwtClaim: JwtClaim): Option[UserInfo] = {
     jwtClaim.expiration filter { expirationTimestamp: Long =>
-      expirationTimestamp > DateTime.now.clicks
+      expirationTimestamp > nowInSeconds
     } flatMap { _ =>
       val maybeToken: Either[ParsingFailure, Json] = parse(jwtClaim.content)
       maybeToken.flatMap { token =>
@@ -54,14 +54,14 @@ object JwtAuth {
   }
 
   def decodeJwt(userInfo: UserInfo): JsonWebToken = {
-    val now: Long = DateTime.now.clicks / 1000
-
     val jwtClaim: JwtClaim = JwtClaim(
-      expiration = Some(now + validFor),
-      issuedAt = Some(now),
+      expiration = Some(nowInSeconds + validFor),
+      issuedAt = Some(nowInSeconds),
       content = userInfo.asJson.toString
     )
     val token: String = JwtCirce.encode(claim = jwtClaim, key = secretKey, algorithm = hashAlgorithm)
     JsonWebToken(token)
   }
+
+  private def nowInSeconds: Long = DateTime.now.clicks / 1000
 }
