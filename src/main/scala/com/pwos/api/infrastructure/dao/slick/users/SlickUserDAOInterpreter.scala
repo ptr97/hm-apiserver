@@ -13,7 +13,10 @@ final class SlickUserDAOInterpreter(implicit ec: ExecutionContext) extends UserD
   val users: TableQuery[UserTable] = TableQuery[UserTable]
 
   override def create(user: User): DBIO[User] = {
-    users returning users += user
+    val newUserId: DBIO[Long] = users returning users.map(_.id) += user
+    newUserId.flatMap { id =>
+      users.filter(_.id === id).result.head
+    }
   }
 
   override def get(id: Long): DBIO[Option[User]] = {

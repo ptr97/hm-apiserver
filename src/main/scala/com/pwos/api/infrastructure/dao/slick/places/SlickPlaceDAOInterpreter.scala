@@ -13,7 +13,10 @@ final class SlickPlaceDAOInterpreter(implicit ec: ExecutionContext) extends Plac
   val places: TableQuery[PlaceTable] = TableQuery[PlaceTable]
 
   override def create(place: Place): DBIO[Place] = {
-    places returning places += place
+    val newPlaceId: DBIO[Long] = places returning places.map(_.id) += place
+    newPlaceId.flatMap { id =>
+      places.filter(_.id === id).result.head
+    }
   }
 
   override def get(id: Long): DBIO[Option[Place]] = {
