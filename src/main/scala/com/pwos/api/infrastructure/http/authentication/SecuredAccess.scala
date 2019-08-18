@@ -51,7 +51,7 @@ abstract class SecuredAccess(implicit ec: ExecutionContext, database: Database) 
     validateTokenUserInfo(userInfoFromToken) &&
     isNotBanned(userInfoFromToken) &&
     isNotDeleted(userInfoFromToken) &&
-    validateRequiredRole(requiredRole, userInfoFromToken.role)
+    validateRequiredRole(userInfoFromToken.role, requiredRole)
   }
 
   private def validateTokenUserInfo(userInfoFromToken: UserInfo): Boolean = {
