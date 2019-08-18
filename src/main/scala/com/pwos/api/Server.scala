@@ -10,10 +10,10 @@ import com.pwos.api.domain.authentication.AuthService
 import com.pwos.api.domain.places.PlaceService
 import com.pwos.api.domain.places.PlaceValidationInterpreter
 import com.pwos.api.domain.users.UserValidationInterpreter
-import com.pwos.api.infrastructure.RequestOps
 import com.pwos.api.infrastructure.dao.slick.DBIOMonad._
 import com.pwos.api.infrastructure.dao.slick.places.SlickPlaceDAOInterpreter
 import com.pwos.api.infrastructure.dao.slick.users.SlickUserDAOInterpreter
+import com.pwos.api.infrastructure.http.HttpOps
 import com.pwos.api.infrastructure.http.PlaceController
 import com.pwos.api.infrastructure.http.authentication.AuthController
 import slick.dbio.DBIO
@@ -49,7 +49,7 @@ object Server {
   }
 
   private def routes(implicit ec: ExecutionContext, database: Database): Route = {
-    RequestOps.withRequestLogging {
+    HttpOps.withRequestLogging {
       authRoutes ~
       placeRoutes
     }
