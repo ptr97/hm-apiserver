@@ -48,10 +48,10 @@ abstract class SecuredAccess(implicit ec: ExecutionContext, database: Database) 
   }
 
   private def hasApiAccess(userInfoFromToken: UserInfo, requiredRole: UserRole.Value): Boolean = {
-      validateTokenUserInfo(userInfoFromToken) &&
-      isNotBanned(userInfoFromToken) &&
-      isNotDeleted(userInfoFromToken) &&
-      validateRequiredRole(requiredRole, userInfoFromToken.role)
+    validateTokenUserInfo(userInfoFromToken) &&
+    isNotBanned(userInfoFromToken) &&
+    isNotDeleted(userInfoFromToken) &&
+    validateRequiredRole(requiredRole, userInfoFromToken.role)
   }
 
   private def validateTokenUserInfo(userInfoFromToken: UserInfo): Boolean = {
