@@ -13,7 +13,7 @@ trait UserDAOAlgebra[F[_]] {
 
   def update(user: User): F[Option[User]]
 
-  def delete(id: Long): F[Boolean]
+  def markDeleted(id: Long): F[Boolean]
 
   def all: F[List[User]]
 

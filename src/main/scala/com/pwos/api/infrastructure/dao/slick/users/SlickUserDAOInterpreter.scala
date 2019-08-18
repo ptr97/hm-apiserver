@@ -34,7 +34,7 @@ final class SlickUserDAOInterpreter(implicit ec: ExecutionContext) extends UserD
     }
   }
 
-  override def delete(id: Long): DBIO[Boolean] = {
+  override def markDeleted(id: Long): DBIO[Boolean] = {
     users.filter(_.id === id).map(_.deleted).update(true).map(_ == 1)
   }
 

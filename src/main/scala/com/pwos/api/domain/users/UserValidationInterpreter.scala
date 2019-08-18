@@ -6,11 +6,12 @@ import cats.data.OptionT
 import cats.data.ValidatedNel
 import cats.implicits._
 import com.pwos.api.domain.HelloMountainsError._
+import com.pwos.api.domain.users.UserModels.UpdateUserCredentialsModel
 
 
 class UserValidationInterpreter[F[_] : Monad](userDAO: UserDAOAlgebra[F]) extends UserValidationAlgebra[F] {
 
-  override def doesNotExist(user: User): F[ValidatedNel[UserValidationError, Unit]] = {
+  override def doesNotExist(userName: String, email: String): F[ValidatedNel[UserValidationError, Unit]] = {
 
     val validateUsername: String => F[ValidatedNel[UserValidationError, Unit]] = username => {
       val maybeUser: F[Option[User]] = userDAO.findByName(username)
@@ -22,8 +23,8 @@ class UserValidationInterpreter[F[_] : Monad](userDAO: UserDAOAlgebra[F]) extend
       EitherT.fromOptionF(maybeUser, UserWithSameEmailAlreadyExistsError(email)).toValidatedNel.map(_.map(_ => ()))
     }
 
-    validateUsername(user.userName).flatMap { validName =>
-      validateEmail(user.email).map { validEmail =>
+    validateUsername(userName).flatMap { validName =>
+      validateEmail(email).map { validEmail =>
         (validName, validEmail).mapN { (_, _) => () }
       }
     }
@@ -39,48 +40,62 @@ class UserValidationInterpreter[F[_] : Monad](userDAO: UserDAOAlgebra[F]) extend
     EitherT.fromOptionF(maybeUserT.value, UserNotFoundError).map(_ => ())
   }
 
-  override def validCredentials(createUserModel: UserModels.CreateUserModel): ValidatedNel[UserValidationError, Unit] = {
-    val validateUsername: String => ValidatedNel[UserValidationError, Unit] = username => {
-      if (username.length > 2) {
-        ().validNel
-      } else {
-        IncorrectUserNameError(username).invalidNel
-      }
-    }
-
-    val validateEmail: String => ValidatedNel[UserValidationError, Unit] = email => {
-      val emailRegex = """^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$"""
-      if (email.matches(emailRegex)) {
-        ().validNel
-      } else {
-        IncorrectEmailError(email).invalidNel
-      }
-    }
-
-    val validatePassword: String => ValidatedNel[UserValidationError, Unit] = password => {
-      val passwordRegex = """^(?=.*\d)(?=.*[A-Z])(?=.*[a-z])([^\s]){8,200}$"""
-      if (password.matches(passwordRegex)) {
-        ().validNel
-      } else {
-        IncorrectPasswordError.invalidNel
-      }
-    }
-
-    val validatePasswordsCompatibility: (String, String) => ValidatedNel[UserValidationError, Unit] = (password, passwordCheck) => {
-      if (password == passwordCheck) {
-        ().validNel
-      } else {
-        PasswordsIncompatibleError.invalidNel
-      }
-    }
-
-
+  override def validateUserCreationModel(createUserModel: UserModels.CreateUserModel): ValidatedNel[UserValidationError, Unit] = {
     (
       validateUsername(createUserModel.userName),
       validateEmail(createUserModel.email),
       validatePassword(createUserModel.password),
       validatePasswordsCompatibility(createUserModel.password, createUserModel.passwordCheck)
     ) mapN { (_, _, _, _) => () }
+  }
+
+  override def validateUserUpdateModel(updateUserCredentialsModel: UpdateUserCredentialsModel): ValidatedNel[UserValidationError, Unit] = {
+    val validName: ValidatedNel[UserValidationError, Unit] = updateUserCredentialsModel.userName.map(validateUsername).getOrElse(().validNel)
+    val validEmail: ValidatedNel[UserValidationError, Unit] = updateUserCredentialsModel.userName.map(validateEmail).getOrElse(().validNel)
+
+    (validName, validEmail) mapN { (_, _) => () }
+  }
+
+  override def validateChangePasswordModel(changePasswordModel: UserModels.ChangePasswordModel): ValidatedNel[UserValidationError, Unit] = {
+    (
+      validatePassword(changePasswordModel.newPassword),
+      validatePasswordsCompatibility(changePasswordModel.newPassword, changePasswordModel.newPasswordCheck)
+    ) mapN { (_, _) => () }
+  }
+
+
+  private def validateUsername(userName: String): ValidatedNel[UserValidationError, Unit] = {
+    if (userName.length > 2) {
+      ().validNel
+    } else {
+      IncorrectUserNameError(userName).invalidNel
+    }
+  }
+
+  private def validateEmail(email: String): ValidatedNel[UserValidationError, Unit] = {
+    val emailRegex = """^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$"""
+    if (email.matches(emailRegex)) {
+      ().validNel
+    } else {
+      IncorrectEmailError(email).invalidNel
+    }
+  }
+
+  private def validatePassword(password: String): ValidatedNel[UserValidationError, Unit] = {
+    val passwordRegex = """^(?=.*\d)(?=.*[A-Z])(?=.*[a-z])([^\s]){8,200}$"""
+    if (password.matches(passwordRegex)) {
+      ().validNel
+    } else {
+      IncorrectPasswordError.invalidNel
+    }
+  }
+
+  private def validatePasswordsCompatibility(password: String, passwordCheck: String): ValidatedNel[UserValidationError, Unit] = {
+    if (password == passwordCheck) {
+      ().validNel
+    } else {
+      PasswordsIncompatibleError.invalidNel
+    }
   }
 
 }
