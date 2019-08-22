@@ -1,6 +1,9 @@
 package com.pwos.api.domain.users
 
 import com.pwos.api.domain.authentication.PasswordService.Password
+import io.circe.Decoder
+import io.circe.Encoder
+import io.circe.generic.semiauto._
 
 
 case class User(
@@ -15,6 +18,13 @@ case class User(
   def toView: Option[UserView] = id.map { id => UserView(id, userName, email) }
 
   def buildUserInfo: Option[UserInfo] = id.map { id => UserInfo(id, userName, email, role, banned, deleted) }
+}
+
+object User {
+  implicit val userRoleDecoder: Decoder[UserRole.Value] = Decoder.decodeEnumeration(UserRole)
+  implicit val userRoleEncoder: Encoder[UserRole.Value] = Encoder.encodeEnumeration(UserRole)
+  implicit val userDecoder: Decoder[User] = deriveDecoder
+  implicit val userEncoder: Encoder[User] = deriveEncoder
 }
 
 

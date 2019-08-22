@@ -10,6 +10,7 @@ import akka.http.scaladsl.model.StatusCodes
 import akka.http.scaladsl.model.headers.RawHeader
 import akka.http.scaladsl.server.Directive0
 import akka.http.scaladsl.server.Directives.mapRequest
+import cats.data.NonEmptyList
 import com.pwos.api.domain.HelloMountainsError._
 import com.pwos.api.domain.users.UserInfo
 import com.pwos.api.infrastructure.http.authentication.JwtAuth
@@ -65,6 +66,16 @@ package object http {
         headers = List(RawHeader("Access-Control-Allow-Origin", "*")))
     }
 
+    private def clientErrorResponseNel[T <: NonEmptyList[HelloMountainsError] : Encoder](value: T, statusCode: StatusCode = StatusCodes.BadRequest): HttpResponse = {
+      logResponse(value, statusCode)
+
+      val error: NonEmptyList[String] = value.map(_.message)
+
+      HttpResponse(status = statusCode,
+        entity = HttpEntity(`application/json`, ErrorResponse(error).toJson),
+        headers = List(RawHeader("Access-Control-Allow-Origin", "*")))
+    }
+
     private def internalErrorResponse[T: Encoder](value: T, statusCode: StatusCode = StatusCodes.InternalServerError): HttpResponse = {
       logResponse(value, statusCode)
       HttpResponse(status = statusCode,
@@ -78,6 +89,8 @@ package object http {
     def created[T: Encoder](value: T): HttpResponse = successResponse(value, StatusCodes.Created)
 
     def badRequest[T <: HelloMountainsError : Encoder](value: T): HttpResponse = clientErrorResponse(value)
+
+    def badRequestNel[T <: NonEmptyList[HelloMountainsError] : Encoder](value: T): HttpResponse = clientErrorResponseNel(value)
 
     def forbidden[T <: HelloMountainsError : Encoder](value: T): HttpResponse = clientErrorResponse(value, StatusCodes.Forbidden)
 

@@ -5,7 +5,6 @@ import akka.http.scaladsl.server.Route
 import com.pwos.api.domain.places.Place
 import com.pwos.api.domain.places.PlaceService
 import com.pwos.api.domain.places.PlaceUpdateModel
-import com.pwos.api.domain.users.UserInfo
 import com.pwos.api.domain.users.UserRole
 import com.pwos.api.infrastructure.dao.slick.DBIOMonad._
 import com.pwos.api.infrastructure.http.authentication.SecuredAccess
@@ -27,7 +26,7 @@ class PlaceController(placeService: PlaceService[DBIO])(implicit ec: ExecutionCo
 
 
   def addPlace: Route = path(PLACES) {
-    authorizedPost(UserRole.Admin) { userInfo: UserInfo =>
+    authorizedPost(UserRole.Admin) { _ =>
       entity(as[Place]) { place: Place =>
         complete {
           placeService.create(place).value.unsafeRun map {
@@ -40,7 +39,7 @@ class PlaceController(placeService: PlaceService[DBIO])(implicit ec: ExecutionCo
   }
 
   def getPlace: Route = path(PLACES / LongNumber) { placeId: Long =>
-    authorizedGet(UserRole.User) { userInfo =>
+    authorizedGet(UserRole.User) { _ =>
       complete {
         placeService.get(placeId).value.unsafeRun map {
           case Right(place) => HttpOps.ok(place)
@@ -51,7 +50,7 @@ class PlaceController(placeService: PlaceService[DBIO])(implicit ec: ExecutionCo
   }
 
   def updatePlace: Route = path(PLACES / LongNumber) { placeId: Long =>
-    authorizedPut(UserRole.Admin) { userInfo =>
+    authorizedPut(UserRole.Admin) { _ =>
       entity(as[PlaceUpdateModel]) { placeUpdateModel: PlaceUpdateModel =>
         complete {
           placeService.update(placeId, placeUpdateModel).value.unsafeRun map {
@@ -64,7 +63,7 @@ class PlaceController(placeService: PlaceService[DBIO])(implicit ec: ExecutionCo
   }
 
   def deletePlace: Route = path(PLACES / LongNumber) { placeId: Long =>
-    authorizedDelete(UserRole.Admin) { userInfo =>
+    authorizedDelete(UserRole.Admin) { _ =>
       complete {
         placeService.delete(placeId).value.unsafeRun map {
           case Right(true) => HttpOps.ok("Place deleted")
@@ -76,7 +75,7 @@ class PlaceController(placeService: PlaceService[DBIO])(implicit ec: ExecutionCo
   }
 
   def listPlaces: Route = path(PLACES) {
-    authorizedGet(UserRole.User) { userInfo =>
+    authorizedGet(UserRole.User) { _ =>
       parameters('page.as[Int] ?, 'pageSize.as[Int] ?, 'sortBy.as[String] ?, 'filterBy.as[String] ?, 'search.as[String] ?) {
         (page, pageSize, sortBy, filterBy, search) =>
           println(s"$page, $pageSize, $sortBy, $filterBy, $search")
