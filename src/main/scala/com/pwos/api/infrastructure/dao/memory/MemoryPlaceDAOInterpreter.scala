@@ -28,7 +28,7 @@ final class MemoryPlaceDAOInterpreter extends PlaceDAOAlgebra[Id] {
   override def update(place: Place): Id[Option[Place]] = {
     for {
       found <- this.places.find(_.id === place.id)
-      newList = place :: this.places.filterNot(_.id == found.id)
+      newList = place :: this.places.filterNot(_.id === found.id)
       _ = this.places = newList
       updated <- this.places.find(_.id === place.id)
     } yield updated
