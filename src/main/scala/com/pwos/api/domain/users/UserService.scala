@@ -109,3 +109,8 @@ class UserService[F[_] : Monad](userDAO: UserDAOAlgebra[F], userValidation: User
   }
 
 }
+
+object UserService {
+  def apply[F[_]: Monad](userDAO: UserDAOAlgebra[F], userValidation: UserValidationAlgebra[F]): UserService[F] =
+    new UserService(userDAO, userValidation)
+}
