@@ -9,12 +9,14 @@ import com.pwos.api.config.Config
 import com.pwos.api.domain.authentication.AuthService
 import com.pwos.api.domain.places.PlaceService
 import com.pwos.api.domain.places.PlaceValidationInterpreter
+import com.pwos.api.domain.users.UserService
 import com.pwos.api.domain.users.UserValidationInterpreter
 import com.pwos.api.infrastructure.dao.slick.DBIOMonad._
 import com.pwos.api.infrastructure.dao.slick.places.SlickPlaceDAOInterpreter
 import com.pwos.api.infrastructure.dao.slick.users.SlickUserDAOInterpreter
 import com.pwos.api.infrastructure.http.HttpOps
 import com.pwos.api.infrastructure.http.PlaceController
+import com.pwos.api.infrastructure.http.UserController
 import com.pwos.api.infrastructure.http.authentication.AuthController
 import slick.dbio.DBIO
 import slick.jdbc.MySQLProfile.backend.Database
@@ -51,6 +53,7 @@ object Server {
   private def routes(implicit ec: ExecutionContext, database: Database): Route = {
     HttpOps.withRequestLogging {
       authRoutes ~
+      userRoutes ~
       placeRoutes
     }
   }
@@ -62,6 +65,15 @@ object Server {
     lazy val authController: AuthController = AuthController(authService)
 
     authController.authRoutes
+  }
+
+  private def userRoutes(implicit ec: ExecutionContext, database: Database): Route = {
+    lazy val userDAO: SlickUserDAOInterpreter = SlickUserDAOInterpreter(ec)
+    lazy val userValidation: UserValidationInterpreter[DBIO] = UserValidationInterpreter[DBIO](userDAO)
+    lazy val userService: UserService[DBIO] = UserService(userDAO, userValidation)
+    lazy val userController: UserController = UserController(userService)
+
+    userController.userRoutes
   }
 
   private def placeRoutes(implicit ec: ExecutionContext, database: Database): Route = {
