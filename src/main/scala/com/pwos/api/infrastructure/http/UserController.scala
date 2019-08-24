@@ -64,9 +64,9 @@ class UserController(userService: UserService[DBIO])(implicit ec: ExecutionConte
     post {
       entity(as[CreateUserModel]) { createUserModel =>
         complete {
-          userService.create(createUserModel).unsafeRun map {
-            case Valid(userView) => HttpOps.created(userView)
-            case Invalid(errorList) => HttpOps.badRequestNel(errorList)
+          userService.create(createUserModel).value.unsafeRun map {
+            case Right(userView) => HttpOps.created(userView)
+            case Left(errorList) => HttpOps.badRequestNel(errorList)
           }
         }
       }

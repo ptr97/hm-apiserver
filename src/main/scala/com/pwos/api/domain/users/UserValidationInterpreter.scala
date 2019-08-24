@@ -14,13 +14,19 @@ class UserValidationInterpreter[F[_] : Monad](userDAO: UserDAOAlgebra[F]) extend
   override def doesNotExist(userName: String, email: String): F[ValidatedNel[UserValidationError, Unit]] = {
 
     val validateUsername: String => F[ValidatedNel[UserValidationError, Unit]] = username => {
-      val maybeUser: F[Option[User]] = userDAO.findByName(username)
-      EitherT.fromOptionF(maybeUser, UserWithSameNameAlreadyExistsError(username)).toValidatedNel.map(_.map(_ => ()))
+      val userF: F[Option[User]] = userDAO.findByName(username)
+      userF map {
+        case Some(_) => UserWithSameNameAlreadyExistsError(username).invalidNel
+        case None => ().validNel
+      }
     }
 
     val validateEmail: String => F[ValidatedNel[UserValidationError, Unit]] = email => {
-      val maybeUser: F[Option[User]] = userDAO.findByEmail(email)
-      EitherT.fromOptionF(maybeUser, UserWithSameEmailAlreadyExistsError(email)).toValidatedNel.map(_.map(_ => ()))
+      val userF: F[Option[User]] = userDAO.findByEmail(email)
+      userF map {
+        case Some(_) => UserWithSameEmailAlreadyExistsError(email).invalidNel
+        case None => ().validNel
+      }
     }
 
     validateUsername(userName).flatMap { validName =>

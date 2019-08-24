@@ -3,6 +3,7 @@ package com.pwos.api.domain.users
 import cats.Monad
 import cats.data.EitherT
 import cats.data.IdT
+import cats.data.NonEmptyList
 import cats.data.OptionT
 import cats.data.ValidatedNel
 import cats.implicits._
@@ -14,19 +15,19 @@ import com.pwos.api.domain.users.UserModels._
 
 class UserService[F[_] : Monad](userDAO: UserDAOAlgebra[F], userValidation: UserValidationAlgebra[F]) {
 
-  def create(createUserModel: CreateUserModel): F[ValidatedNel[UserValidationError, UserView]] = {
-    for {
-      _ <- implicitly[Monad[F]].pure(userValidation.validateUserCreationModel(createUserModel))
-      _ <- userValidation.doesNotExist(createUserModel.userName, createUserModel.email)
-      hashedPassword = PasswordService.hash(createUserModel.password)
-      newUser = User(userName = createUserModel.userName, email = createUserModel.email, password = hashedPassword)
-      createdUser <- userDAO.create(newUser)
-    } yield {
-      createdUser.toView match {
-        case Some(user) => user.validNel
-        case _ => UserNotFoundError.invalidNel
+  def create(createUserModel: CreateUserModel): EitherT[F, NonEmptyList[UserValidationError], UserView] = {
+    def userWithHashedPassword: User = {
+      val hashedPassword: Password = PasswordService.hash(createUserModel.password)
+      User(userName = createUserModel.userName, email = createUserModel.email, password = hashedPassword)
+    }
+
+    EitherT(implicitly[Monad[F]].pure(userValidation.validateUserCreationModel(createUserModel).toEither)) flatMap { _ =>
+      EitherT(userValidation.doesNotExist(createUserModel.userName, createUserModel.email).map(_.toEither)) flatMap { _ =>
+        val userF: F[User] = userDAO.create(userWithHashedPassword)
+        EitherT.fromOptionF(userF.map(_.toView), NonEmptyList.of(UserNotFoundError))
       }
     }
+
   }
 
   def getSimpleView(id: Long): EitherT[F, UserNotFoundError.type, UserView] = {
@@ -97,7 +98,7 @@ class UserService[F[_] : Monad](userDAO: UserDAOAlgebra[F], userValidation: User
     for {
       _ <- userValidation.exists(Option(id))
       user <- EitherT.liftF(userDAO.get(id)).map(_.get)
-      updatedUser <- EitherT.fromOptionF(userDAO.update(user.copy(banned = updateUserStatusModel.banned)), UserNotFoundError : UserValidationError)
+      updatedUser <- EitherT.fromOptionF(userDAO.update(user.copy(banned = updateUserStatusModel.banned)), UserNotFoundError: UserValidationError)
     } yield updatedUser
   }
 
@@ -111,6 +112,6 @@ class UserService[F[_] : Monad](userDAO: UserDAOAlgebra[F], userValidation: User
 }
 
 object UserService {
-  def apply[F[_]: Monad](userDAO: UserDAOAlgebra[F], userValidation: UserValidationAlgebra[F]): UserService[F] =
+  def apply[F[_] : Monad](userDAO: UserDAOAlgebra[F], userValidation: UserValidationAlgebra[F]): UserService[F] =
     new UserService(userDAO, userValidation)
 }
