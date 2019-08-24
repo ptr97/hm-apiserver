@@ -39,7 +39,7 @@ class PlaceServiceSpec extends FunSpec with Matchers {
     it("should not add new place when exactly the same place exists") {
       val (placeDAO, placeService) = getTestResources
       placeDAO.create(place)
-      val addPlaceResult = placeService.create(place).value
+      val addPlaceResult: Id[Either[PlaceAlreadyExistsError, Place]] = placeService.create(place).value
 
       addPlaceResult shouldBe Left(PlaceAlreadyExistsError(place))
     }
