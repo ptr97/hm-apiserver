@@ -157,7 +157,7 @@ class PlaceServiceSpec extends FunSpec with Matchers {
 
       val getAllPlacesResult: Id[List[Place]] = placeService.list(None, None)
 
-      getAllPlacesResult.sortBy(_.name) shouldBe List(p1, p2, p3, p4).sortBy(_.name)
+      getAllPlacesResult shouldBe List(p1, p2, p3, p4)
     }
 
     it("should return empty list of places when there are not any places") {
@@ -176,7 +176,7 @@ class PlaceServiceSpec extends FunSpec with Matchers {
 
       val getAllPlacesResult: Id[List[Place]] = placeService.list(Some(2), None)
 
-      getAllPlacesResult.sortBy(_.name) shouldBe List(p1, p2).sortBy(_.name)
+      getAllPlacesResult shouldBe List(p1, p2)
     }
 
     it("should return list of places with proper offset") {
@@ -188,7 +188,7 @@ class PlaceServiceSpec extends FunSpec with Matchers {
 
       val getAllPlacesResult: Id[List[Place]] = placeService.list(None, Some(2))
 
-      getAllPlacesResult.sortBy(_.name) shouldBe List(p3, p4).sortBy(_.name)
+      getAllPlacesResult shouldBe List(p3, p4)
     }
 
     it("should return list of places with proper page size and offset") {
@@ -200,7 +200,7 @@ class PlaceServiceSpec extends FunSpec with Matchers {
 
       val getAllPlacesResult: Id[List[Place]] = placeService.list(Some(2), Some(1))
 
-      getAllPlacesResult.sortBy(_.name) shouldBe List(p2, p3).sortBy(_.name)
+      getAllPlacesResult shouldBe List(p2, p3)
     }
   }
 }
