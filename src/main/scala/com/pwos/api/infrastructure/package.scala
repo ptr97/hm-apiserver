@@ -12,7 +12,7 @@ package object infrastructure {
   object implicits {
 
     implicit class DBIOtoFuture[T](dbio: DBIO[T])(implicit ec: ExecutionContext, db: Database) {
-      def unsafeRun: Future[T] = db.run(dbio)
+      def unsafeRun: Future[T] = db.run(dbio.transactionally)
     }
 
   }
