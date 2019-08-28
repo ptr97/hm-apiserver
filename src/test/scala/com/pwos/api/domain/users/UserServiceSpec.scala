@@ -2,9 +2,6 @@ package com.pwos.api.domain.users
 
 import cats.Id
 import cats.data.NonEmptyList
-import cats.data.Validated.Invalid
-import cats.data.Validated.Valid
-import cats.data.ValidatedNel
 import cats.implicits._
 import com.pwos.api.domain.HelloMountainsError
 import com.pwos.api.domain.HelloMountainsError._
@@ -12,6 +9,7 @@ import com.pwos.api.domain.authentication.PasswordService
 import com.pwos.api.domain.users.UserModels.ChangePasswordModel
 import com.pwos.api.domain.users.UserModels.CreateUserModel
 import com.pwos.api.domain.users.UserModels.UpdateUserCredentialsModel
+import com.pwos.api.domain.users.UserModels.UpdateUserStatusModel
 import com.pwos.api.infrastructure.dao.memory.MemoryUserDAOInterpreter
 import org.scalatest.FunSpec
 import org.scalatest.Matchers
@@ -404,11 +402,64 @@ class UserServiceSpec extends FunSpec with Matchers {
   }
 
   describe("Updating user status - blocking and unblocking") {
+    it("should block user") {
+      val (userDAO, userService) = getTestResources
+      val userFromDb: Id[User] = userDAO.create(userStephen)
+      val newBannedStatus: Boolean = true
+      val updateUserStatusModel = UpdateUserStatusModel(banned = newBannedStatus)
+      val updateStatusResult: Id[Either[UserValidationError, User]] = userService.updateStatus(userFromDb.id.get, updateUserStatusModel).value
 
+      updateStatusResult shouldBe Right(userFromDb.copy(banned = newBannedStatus))
+
+      val userCheck: Id[User] = userDAO.get(userFromDb.id.get).get
+      userCheck.banned shouldBe newBannedStatus
+    }
+
+    it("should unblock user") {
+      val (userDAO, userService) = getTestResources
+      val userFromDb: Id[User] = userDAO.create(userStephen)
+      val bannedUserFromDb: Id[User] = userDAO.update(userFromDb.copy(banned = true)).get
+      val newBannedStatus: Boolean = false
+      val updateUserStatusModel = UpdateUserStatusModel(banned = newBannedStatus)
+      val updateStatusResult: Id[Either[UserValidationError, User]] = userService.updateStatus(userFromDb.id.get, updateUserStatusModel).value
+
+      updateStatusResult shouldBe Right(bannedUserFromDb.copy(banned = newBannedStatus))
+      val userCheck: Id[User] = userDAO.get(userFromDb.id.get).get
+      userCheck.banned shouldBe newBannedStatus
+    }
+
+    it("should return proper error when user does not exist") {
+      val (userDAO, userService) = getTestResources
+      val notExistingId: Long = userDAO.getLastId + 1
+      val newBannedStatus: Boolean = true
+      val updateUserStatusModel = UpdateUserStatusModel(banned = newBannedStatus)
+
+      val updateStatusResult: Id[Either[UserValidationError, User]] = userService.updateStatus(notExistingId, updateUserStatusModel).value
+
+      updateStatusResult shouldBe Left(UserNotFoundError)
+    }
   }
 
   describe("Deleting user") {
+    it("should delete user") {
+      val (userDAO, userService) = getTestResources
+      val userFromDb: Id[User] = userDAO.create(userStephen)
 
+      val updateStatusResult: Id[Either[UserValidationError, Boolean]] = userService.delete(userFromDb.id.get).value
+
+      updateStatusResult shouldBe Right(true)
+
+      val userCheck: Id[User] = userDAO.get(userFromDb.id.get).get
+      userCheck.deleted shouldBe true
+    }
+
+    it("should return proper error when user does not exist") {
+      val (userDAO, userService) = getTestResources
+      val notExistingId: Long = userDAO.getLastId + 1
+      val updateStatusResult: Id[Either[UserValidationError, Boolean]] = userService.delete(notExistingId).value
+
+      updateStatusResult shouldBe Left(UserNotFoundError)
+    }
   }
 
 }
