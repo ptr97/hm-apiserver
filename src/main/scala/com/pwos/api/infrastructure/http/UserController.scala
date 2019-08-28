@@ -2,8 +2,6 @@ package com.pwos.api.infrastructure.http
 
 import akka.http.scaladsl.server.Directives._
 import akka.http.scaladsl.server.Route
-import cats.data.Validated.Invalid
-import cats.data.Validated.Valid
 import com.pwos.api.domain.users.UserModels._
 import com.pwos.api.domain.users.UserRole
 import com.pwos.api.domain.users.UserService
