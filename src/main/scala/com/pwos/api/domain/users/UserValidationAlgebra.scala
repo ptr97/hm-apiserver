@@ -10,7 +10,9 @@ trait UserValidationAlgebra[F[_]] {
 
   def doesNotExist(userName: String, email: String): F[ValidatedNel[UserValidationError, Unit]]
 
-  def exists(userId: Option[Long]): EitherT[F, UserNotFoundError.type, Unit]
+  def doesNotExist(maybeUserName: Option[String], maybeEmail: Option[String]): F[ValidatedNel[UserValidationError, Unit]]
+
+  def exists(userId: Option[Long]): EitherT[F, UserValidationError, Unit]
 
   def validateUserCreationModel(createUserModel: CreateUserModel): ValidatedNel[UserValidationError, Unit]
 

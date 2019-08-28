@@ -3,6 +3,7 @@ package com.pwos.api.domain.users
 import cats.Monad
 import cats.data.EitherT
 import cats.data.OptionT
+import cats.data.Validated.Valid
 import cats.data.ValidatedNel
 import cats.implicits._
 import com.pwos.api.domain.HelloMountainsError._
@@ -11,39 +12,49 @@ import com.pwos.api.domain.users.UserModels.UpdateUserCredentialsModel
 
 class UserValidationInterpreter[F[_] : Monad](userDAO: UserDAOAlgebra[F]) extends UserValidationAlgebra[F] {
 
+  private def validateFieldUniques(field: String, fetchByField: String => F[Option[User]], error: UserValidationError): F[ValidatedNel[UserValidationError, Unit]] = {
+    val userF: F[Option[User]] = fetchByField(field)
+    userF map {
+      case Some(_) => error.invalidNel
+      case None => ().validNel
+    }
+  }
+
+  private def validateUserNameUniques(userName: String): F[ValidatedNel[UserValidationError, Unit]] = {
+    validateFieldUniques(userName, userDAO.findByName, UserWithSameNameAlreadyExistsError(userName))
+  }
+
+  private def validateEmailUniques(email: String): F[ValidatedNel[UserValidationError, Unit]] = {
+    validateFieldUniques(email, userDAO.findByEmail, UserWithSameEmailAlreadyExistsError(email))
+  }
+
   override def doesNotExist(userName: String, email: String): F[ValidatedNel[UserValidationError, Unit]] = {
-
-    val validateUsername: String => F[ValidatedNel[UserValidationError, Unit]] = username => {
-      val userF: F[Option[User]] = userDAO.findByName(username)
-      userF map {
-        case Some(_) => UserWithSameNameAlreadyExistsError(username).invalidNel
-        case None => ().validNel
-      }
-    }
-
-    val validateEmail: String => F[ValidatedNel[UserValidationError, Unit]] = email => {
-      val userF: F[Option[User]] = userDAO.findByEmail(email)
-      userF map {
-        case Some(_) => UserWithSameEmailAlreadyExistsError(email).invalidNel
-        case None => ().validNel
-      }
-    }
-
-    validateUsername(userName).flatMap { validName =>
-      validateEmail(email).map { validEmail =>
+    validateUserNameUniques(userName).flatMap { validName =>
+      validateEmailUniques(email).map { validEmail =>
         (validName, validEmail).mapN { (_, _) => () }
       }
     }
   }
 
-  override def exists(maybeUserId: Option[Long]): EitherT[F, UserNotFoundError.type, Unit] = {
+  override def doesNotExist(maybeUserName: Option[String], maybeEmail: Option[String]): F[ValidatedNel[UserValidationError, Unit]] = {
+    val validateUserNameF: F[ValidatedNel[UserValidationError, Unit]] = maybeUserName.map(validateUserNameUniques).getOrElse(implicitly[Monad[F]].pure(Valid(Unit)))
+    val validateEmailF: F[ValidatedNel[UserValidationError, Unit]] = maybeEmail.map(validateEmailUniques).getOrElse(implicitly[Monad[F]].pure(Valid(Unit)))
+
+    validateUserNameF flatMap { validUserName =>
+      validateEmailF map { validEmail =>
+        (validUserName, validEmail).mapN { (_, _) => () }
+      }
+    }
+  }
+
+  override def exists(maybeUserId: Option[Long]): EitherT[F, UserValidationError, Unit] = {
     val maybeUserT: OptionT[F, User] = {
       OptionT.fromOption[F](maybeUserId) flatMap { userId: Long =>
         OptionT(userDAO.get(userId))
       }
     }
 
-    EitherT.fromOptionF(maybeUserT.value, UserNotFoundError).map(_ => ())
+    EitherT.fromOptionF(maybeUserT.value, UserNotFoundError: UserValidationError).map(_ => ())
   }
 
   override def validateUserCreationModel(createUserModel: UserModels.CreateUserModel): ValidatedNel[UserValidationError, Unit] = {
@@ -57,7 +68,7 @@ class UserValidationInterpreter[F[_] : Monad](userDAO: UserDAOAlgebra[F]) extend
 
   override def validateUserUpdateModel(updateUserCredentialsModel: UpdateUserCredentialsModel): ValidatedNel[UserValidationError, Unit] = {
     val validName: ValidatedNel[UserValidationError, Unit] = updateUserCredentialsModel.userName.map(validateUsername).getOrElse(().validNel)
-    val validEmail: ValidatedNel[UserValidationError, Unit] = updateUserCredentialsModel.userName.map(validateEmail).getOrElse(().validNel)
+    val validEmail: ValidatedNel[UserValidationError, Unit] = updateUserCredentialsModel.email.map(validateEmail).getOrElse(().validNel)
 
     (validName, validEmail) mapN { (_, _) => () }
   }

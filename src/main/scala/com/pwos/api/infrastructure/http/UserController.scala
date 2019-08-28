@@ -77,9 +77,9 @@ class UserController(userService: UserService[DBIO])(implicit ec: ExecutionConte
     authorizedPut(UserRole.User) { userInfo =>
       entity(as[UpdateUserCredentialsModel]) { updateCredentialsModel =>
         complete {
-          userService.updateCredentials(userInfo.id, updateCredentialsModel).unsafeRun map {
-            case Valid(userView) => HttpOps.ok(userView)
-            case Invalid(errorList) => HttpOps.badRequestNel(errorList)
+          userService.updateCredentials(userInfo.id, updateCredentialsModel).value.unsafeRun map {
+            case Right(userView) => HttpOps.ok(userView)
+            case Left(errorList) => HttpOps.badRequestNel(errorList)
           }
         }
       }
@@ -103,9 +103,9 @@ class UserController(userService: UserService[DBIO])(implicit ec: ExecutionConte
     authorizedPut(UserRole.User) { userInfo =>
       entity(as[ChangePasswordModel]) { changePasswordModel =>
         complete {
-          userService.updatePassword(userInfo.id, changePasswordModel).unsafeRun map {
-            case Valid(success) => HttpOps.ok(success)
-            case Invalid(errorList) => HttpOps.badRequestNel(errorList)
+          userService.updatePassword(userInfo.id, changePasswordModel).value.unsafeRun map {
+            case Right(success) => HttpOps.ok(success)
+            case Left(errorList) => HttpOps.badRequestNel(errorList)
           }
         }
       }

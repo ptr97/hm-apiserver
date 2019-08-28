@@ -34,7 +34,7 @@ object UserModels {
 
   case class LoginModel(userNameOrEmail: String, password: String)
 
-  case class UpdateUserCredentialsModel(userName: Option[String], email: Option[String])
+  case class UpdateUserCredentialsModel(userName: Option[String] = None, email: Option[String] = None)
 
   case class UpdateUserStatusModel(banned: Boolean)
 
