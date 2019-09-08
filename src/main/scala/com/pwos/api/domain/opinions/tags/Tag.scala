@@ -9,6 +9,7 @@ object TagCategory extends Enumeration {
   val THREATS: TagCategory = Value("threats")
 }
 
+
 case class Tag(
                 uuid: String,
                 name: String,
