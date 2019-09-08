@@ -8,6 +8,7 @@ import com.pwos.api.domain.places.PlaceUpdateModel
 import com.pwos.api.domain.users.UserRole
 import com.pwos.api.infrastructure.dao.slick.DBIOMonad._
 import com.pwos.api.infrastructure.http.authentication.SecuredAccess
+import com.pwos.api.infrastructure.http.versions._
 import com.pwos.api.infrastructure.implicits._
 import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport._
 import io.circe.generic.auto._
@@ -25,7 +26,7 @@ class PlaceController(placeService: PlaceService[DBIO])(implicit ec: ExecutionCo
   import PlaceController.PLACES
 
 
-  def addPlace: Route = path(PLACES) {
+  def addPlace: Route = path(v1 / PLACES) {
     authorizedPost(UserRole.Admin) { _ =>
       entity(as[Place]) { place: Place =>
         complete {
@@ -38,7 +39,7 @@ class PlaceController(placeService: PlaceService[DBIO])(implicit ec: ExecutionCo
     }
   }
 
-  def getPlace: Route = path(PLACES / LongNumber) { placeId: Long =>
+  def getPlace: Route = path(v1 / PLACES / LongNumber) { placeId: Long =>
     authorizedGet(UserRole.User) { _ =>
       complete {
         placeService.get(placeId).value.unsafeRun map {
@@ -49,7 +50,7 @@ class PlaceController(placeService: PlaceService[DBIO])(implicit ec: ExecutionCo
     }
   }
 
-  def updatePlace: Route = path(PLACES / LongNumber) { placeId: Long =>
+  def updatePlace: Route = path(v1 / PLACES / LongNumber) { placeId: Long =>
     authorizedPut(UserRole.Admin) { _ =>
       entity(as[PlaceUpdateModel]) { placeUpdateModel: PlaceUpdateModel =>
         complete {
@@ -62,7 +63,7 @@ class PlaceController(placeService: PlaceService[DBIO])(implicit ec: ExecutionCo
     }
   }
 
-  def deletePlace: Route = path(PLACES / LongNumber) { placeId: Long =>
+  def deletePlace: Route = path(v1 / PLACES / LongNumber) { placeId: Long =>
     authorizedDelete(UserRole.Admin) { _ =>
       complete {
         placeService.delete(placeId).value.unsafeRun map {
@@ -74,7 +75,7 @@ class PlaceController(placeService: PlaceService[DBIO])(implicit ec: ExecutionCo
     }
   }
 
-  def listPlaces: Route = path(PLACES) {
+  def listPlaces: Route = path(v1 / PLACES) {
     authorizedGet(UserRole.User) { _ =>
       parameters('page.as[Int] ?, 'pageSize.as[Int] ?, 'sortBy.as[String] ?, 'filterBy.as[String] ?, 'search.as[String] ?) {
         (page, pageSize, sortBy, filterBy, search) =>

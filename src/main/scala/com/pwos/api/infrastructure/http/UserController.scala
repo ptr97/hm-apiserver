@@ -6,6 +6,7 @@ import com.pwos.api.domain.users.UserModels._
 import com.pwos.api.domain.users.UserRole
 import com.pwos.api.domain.users.UserService
 import com.pwos.api.infrastructure.http.authentication.SecuredAccess
+import com.pwos.api.infrastructure.http.versions._
 import com.pwos.api.infrastructure.implicits._
 import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport._
 import io.circe.generic.auto._
@@ -23,7 +24,7 @@ class UserController(userService: UserService[DBIO])(implicit ec: ExecutionConte
   import UserController.USERS
 
 
-  def listUsers: Route = path(USERS) {
+  def listUsers: Route = path(v1 / USERS) {
     authorizedGet(UserRole.Admin) { _ =>
       parameters('page.as[Int] ?, 'pageSize.as[Int] ?, 'sortBy.as[String] ?, 'filterBy.as[String] ?, 'search.as[String] ?) {
         (page, pageSize, sortBy, filterBy, search) =>
@@ -36,7 +37,7 @@ class UserController(userService: UserService[DBIO])(implicit ec: ExecutionConte
     }
   }
 
-  def getUser: Route = path(USERS / LongNumber) { userId: Long =>
+  def getUser: Route = path(v1 / USERS / LongNumber) { userId: Long =>
     authorizedGet(UserRole.Admin) { _ =>
       complete {
         userService.getFullData(userId).value.unsafeRun map {
@@ -47,7 +48,7 @@ class UserController(userService: UserService[DBIO])(implicit ec: ExecutionConte
     }
   }
 
-  def getSelfData: Route = path(USERS / "me") {
+  def getSelfData: Route = path(v1 / USERS / "me") {
     authorizedGet(UserRole.User) { userInfo =>
       complete {
         userService.getSimpleView(userInfo.id).value.unsafeRun map {
@@ -58,7 +59,7 @@ class UserController(userService: UserService[DBIO])(implicit ec: ExecutionConte
     }
   }
 
-  def addUser: Route = path(USERS) {
+  def addUser: Route = path(v1 / USERS) {
     post {
       entity(as[CreateUserModel]) { createUserModel =>
         complete {
@@ -71,7 +72,7 @@ class UserController(userService: UserService[DBIO])(implicit ec: ExecutionConte
     }
   }
 
-  def updateSelf: Route = path(USERS / "me") {
+  def updateSelf: Route = path(v1 / USERS / "me") {
     authorizedPut(UserRole.User) { userInfo =>
       entity(as[UpdateUserCredentialsModel]) { updateCredentialsModel =>
         complete {
@@ -84,7 +85,7 @@ class UserController(userService: UserService[DBIO])(implicit ec: ExecutionConte
     }
   }
 
-  def updateUserStatus: Route = path(USERS / LongNumber) { userId: Long =>
+  def updateUserStatus: Route = path(v1 / USERS / LongNumber) { userId: Long =>
     authorizedPut(UserRole.Admin) { _ =>
       entity(as[UpdateUserStatusModel]) { updateStatusModel =>
         complete {
@@ -97,7 +98,7 @@ class UserController(userService: UserService[DBIO])(implicit ec: ExecutionConte
     }
   }
 
-  def updatePassword: Route = path(USERS / "me" / "password") {
+  def updatePassword: Route = path(v1 / USERS / "me" / "password") {
     authorizedPut(UserRole.User) { userInfo =>
       entity(as[ChangePasswordModel]) { changePasswordModel =>
         complete {
@@ -110,7 +111,7 @@ class UserController(userService: UserService[DBIO])(implicit ec: ExecutionConte
     }
   }
 
-  def deleteAccount: Route = path(USERS / "me") {
+  def deleteAccount: Route = path(v1 / USERS / "me") {
     authorizedDelete(UserRole.User) { userInfo =>
       complete {
         userService.delete(userInfo.id).value.unsafeRun map {

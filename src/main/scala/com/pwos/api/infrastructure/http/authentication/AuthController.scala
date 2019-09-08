@@ -6,6 +6,7 @@ import com.pwos.api.domain.authentication.AuthService
 import com.pwos.api.domain.users.UserModels.LoginModel
 import com.pwos.api.infrastructure.dao.slick.DBIOMonad._
 import com.pwos.api.infrastructure.http.HttpOps
+import com.pwos.api.infrastructure.http.versions._
 import com.pwos.api.infrastructure.implicits._
 import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport._
 import io.circe.generic.auto._
@@ -19,7 +20,7 @@ class AuthController(authService: AuthService[DBIO])(implicit ec: ExecutionConte
 
   val authRoutes: Route = logIn
 
-  def logIn: Route = path("logIn") {
+  def logIn: Route = path(v1 / "logIn") {
     post {
       entity(as[LoginModel]) { loginModel: LoginModel =>
         complete {

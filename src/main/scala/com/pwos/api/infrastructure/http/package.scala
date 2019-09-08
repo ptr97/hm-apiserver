@@ -37,6 +37,10 @@ package object http {
 
   }
 
+  object versions {
+    val v1 = "v1"
+  }
+
 
   object HttpOps {
 
