@@ -10,6 +10,9 @@ lazy val scalaTestVersion         = "3.0.8"
 lazy val scalaCheckVersion        = "1.14.0"
 lazy val circeVersion             = "0.11.1"
 lazy val slickVersion             = "3.3.1"
+lazy val slickJodaMapperVersion   = "2.4.0"
+lazy val jodaTimeVersion          = "2.7"
+lazy val jodaConvertVersion       = "1.7"
 lazy val slf4jVersion             = "1.7.12"
 lazy val catsVersion              = "1.6.0"
 lazy val mySqlConnectorVersion    = "8.0.16"
@@ -28,6 +31,9 @@ libraryDependencies ++= Seq(
   "com.typesafe.slick"      %%  "slick-hikaricp"        % slickVersion,
   "mysql"                   %   "mysql-connector-java"  % mySqlConnectorVersion,
   "org.slf4j"               %   "slf4j-simple"          % slf4jVersion,
+  "com.github.tototoshi"    %% "slick-joda-mapper"      % slickJodaMapperVersion,
+  "joda-time"               % "joda-time"               % jodaTimeVersion,
+  "org.joda"                % "joda-convert"            % jodaConvertVersion,
 
   "com.github.pureconfig"   %%  "pureconfig"            % pureConfigVersion,
 

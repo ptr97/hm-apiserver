@@ -1,9 +1,9 @@
-package com.pwos.api.domain.reports
+package com.pwos.api.domain.opinions.reports
 
-import akka.http.scaladsl.model.DateTime
+import org.joda.time.DateTime
 
 
-object ReportCategories extends Enumeration {
+object ReportCategory extends Enumeration {
   type ReportCategory = Value
 
   val MISLEADING: ReportCategory = Value("misleading")
@@ -16,7 +16,7 @@ case class Report(
                    authorId: Long,
                    opinionId: Long,
                    body: Option[String],
-                   reportCategory: ReportCategories.ReportCategory,
+                   reportCategory: ReportCategory.ReportCategory,
                    creationDate: DateTime = DateTime.now,
                    id: Option[Long]
                  )

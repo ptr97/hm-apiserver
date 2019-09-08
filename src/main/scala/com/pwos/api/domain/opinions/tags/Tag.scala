@@ -1,7 +1,7 @@
-package com.pwos.api.domain.tags
+package com.pwos.api.domain.opinions.tags
 
 
-object TagCategories extends Enumeration {
+object TagCategory extends Enumeration {
   type TagCategory = Value
 
   val SUBSOIL: TagCategory = Value("subsoil")
@@ -13,6 +13,6 @@ case class Tag(
                 uuid: String,
                 name: String,
                 enabled: Boolean,
-                tagCategory: TagCategories.Value,
+                tagCategory: TagCategory.Value,
                 id: Option[Long]
               )
