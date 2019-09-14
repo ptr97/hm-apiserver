@@ -7,14 +7,14 @@ import io.circe.generic.semiauto._
 
 
 case class User(
-                 userName: String,
-                 email: String,
-                 password: Password,
-                 role: UserRole.Value = UserRole.User,
-                 banned: Boolean = false,
-                 deleted: Boolean = false,
-                 id: Option[Long] = None
-               ) {
+  userName: String,
+  email: String,
+  password: Password,
+  role: UserRole.Value = UserRole.User,
+  banned: Boolean = false,
+  deleted: Boolean = false,
+  id: Option[Long] = None
+) {
   def toView: Option[UserView] = id.map { id => UserView(id, userName, email) }
 
   def buildUserInfo: Option[UserInfo] = id.map { id => UserInfo(id, userName, email, role, banned, deleted) }

@@ -13,11 +13,11 @@ object ReportCategory extends Enumeration {
 
 
 case class Report(
-                   authorId: Long,
-                   opinionId: Long,
-                   body: Option[String],
-                   reportCategory: ReportCategory.ReportCategory,
-                   creationDate: DateTime = DateTime.now,
-                   id: Option[Long]
-                 )
+  authorId: Long,
+  opinionId: Long,
+  body: Option[String],
+  reportCategory: ReportCategory.ReportCategory,
+  creationDate: DateTime = DateTime.now,
+  id: Option[Long]
+)
 
