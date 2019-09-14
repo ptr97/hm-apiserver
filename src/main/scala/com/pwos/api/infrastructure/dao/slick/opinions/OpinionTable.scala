@@ -11,17 +11,17 @@ import scala.language.postfixOps
 
 
 case class OpinionDTO(
-                       uuid: String,
-                       placeId: Long,
-                       authorId: Long,
-                       body: Option[String],
-                       referenceDate: DateTime,
-                       lastModified: DateTime,
-                       creationDate: DateTime = DateTime.now,
-                       blocked: Boolean = false,
-                       deleted: Boolean = false,
-                       id: Option[Long] = None
-                     ) {
+  uuid: String,
+  placeId: Long,
+  authorId: Long,
+  body: Option[String],
+  referenceDate: DateTime,
+  lastModified: DateTime,
+  creationDate: DateTime = DateTime.now,
+  blocked: Boolean = false,
+  deleted: Boolean = false,
+  id: Option[Long] = None
+) {
   def toOpinion(tags: List[HmTag], likes: List[String]): Opinion = {
     Opinion(
       id = id,
