@@ -5,6 +5,7 @@ import akka.http.scaladsl.server.Route
 import com.pwos.api.domain.users.UserModels._
 import com.pwos.api.domain.users.UserRole
 import com.pwos.api.domain.users.UserService
+import com.pwos.api.infrastructure.http.JsonImplicits._
 import com.pwos.api.infrastructure.http.authentication.SecuredAccess
 import com.pwos.api.infrastructure.http.versions._
 import com.pwos.api.infrastructure.implicits._

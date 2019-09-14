@@ -1,5 +1,6 @@
 package com.pwos.api.domain.opinions
 
+import com.pwos.api.domain.opinions.reports.ReportCategory
 import com.pwos.api.domain.opinions.tags.Tag
 import org.joda.time.DateTime
 
@@ -39,6 +40,11 @@ object OpinionModels {
 
   case class UpdateOpinionStatusModel(
     blocked: Boolean
+  )
+
+  case class ReportOpinionModel(
+    body: Option[String],
+    reportCategory: ReportCategory.ReportCategory
   )
 
 }

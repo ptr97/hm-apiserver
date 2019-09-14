@@ -58,4 +58,15 @@ object HelloMountainsError {
     override def message: String = s"""Place with name ${place.name} already exists."""
   }
 
+
+  sealed trait OpinionValidationError extends HelloMountainsError
+
+  case object OpinionNotFoundError extends OpinionValidationError {
+    override def message: String = "Opinion does not exist."
+  }
+
+  case object OpinionDeletePrivilegeError extends OpinionValidationError {
+    override def message: String = "You cannot delete opinion which is not yours."
+  }
+
 }

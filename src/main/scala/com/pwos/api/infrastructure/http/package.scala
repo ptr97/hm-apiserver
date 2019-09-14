@@ -1,5 +1,6 @@
 package com.pwos.api.infrastructure
 
+import akka.http.scaladsl.server.Directives._
 import akka.http.scaladsl.model.HttpEntity
 import akka.http.scaladsl.model.HttpEntity.Strict
 import akka.http.scaladsl.model.HttpRequest
@@ -8,15 +9,20 @@ import akka.http.scaladsl.model.MediaTypes.`application/json`
 import akka.http.scaladsl.model.StatusCode
 import akka.http.scaladsl.model.StatusCodes
 import akka.http.scaladsl.model.headers.RawHeader
+import akka.http.scaladsl.server.Directive
 import akka.http.scaladsl.server.Directive0
 import akka.http.scaladsl.server.Directives.mapRequest
 import cats.data.NonEmptyList
 import com.pwos.api.domain.HelloMountainsError._
+import com.pwos.api.domain.PagingRequest
+import com.pwos.api.domain.QueryParameters
 import com.pwos.api.domain.users.UserInfo
 import com.pwos.api.infrastructure.http.authentication.JwtAuth
 import io.circe.Encoder
 import io.circe.generic.auto._
 import io.circe.syntax._
+
+import scala.language.postfixOps
 
 
 package object http {
@@ -140,5 +146,18 @@ package object http {
   }
 
   private def separator(s: String, times: Int): String = s * times
+
+  object PagingOps {
+
+    def pagingParameters: Directive[(QueryParameters, PagingRequest)] = {
+      parameters('page.as[Int] ?, 'pageSize.as[Int] ?, 'sortBy.as[String] ?, 'filterBy.as[String] ?, 'search.as[String] ?).tmap {
+        case (page, pageSize, sortBy, filterBy, search) =>
+          val queryParameters = QueryParameters(filterBy, search)
+          val pagingRequest = PagingRequest(page.getOrElse(0), pageSize.getOrElse(PagingRequest.DefaultPageSize), sortBy)
+          (queryParameters, pagingRequest)
+      }
+    }
+
+  }
 
 }
