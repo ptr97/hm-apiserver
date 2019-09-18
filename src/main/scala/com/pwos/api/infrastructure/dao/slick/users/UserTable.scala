@@ -10,7 +10,7 @@ import scala.language.postfixOps
 
 class UserTable(tag: Tag) extends Table[User](tag, "USER") {
 
-  implicit val enumMapping = MappedColumnType.base[UserRole.Value, String](_.toString, s => UserRole.withName(s))
+  implicit val enumMapping = UserTable.enumMapping
 
   def id: Rep[Long]               = column[Long]("ID", O.PrimaryKey, O.AutoInc)
   def username: Rep[String]       = column[String]("USERNAME")
@@ -30,4 +30,8 @@ class UserTable(tag: Tag) extends Table[User](tag, "USER") {
     deleted,
     id.?
   ) <> (User.apply _ tupled, User.unapply)
+}
+
+object UserTable {
+  val enumMapping = MappedColumnType.base[UserRole.Value, String](_.toString, s => UserRole.withName(s))
 }

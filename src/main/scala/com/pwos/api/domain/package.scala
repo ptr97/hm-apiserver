@@ -1,11 +1,28 @@
 package com.pwos.api
 
+import scala.language.postfixOps
+
+
 package domain {
 
-  case class QueryParameters(filterBy: Option[String], search: Option[String])
+  case class QueryParameters(filterBy: Option[Map[String, String]], search: Option[String])
 
   object QueryParameters {
     def empty: QueryParameters = QueryParameters(None, None)
+
+    def fromRequest(filterByPlain: Option[String], search: Option[String]): QueryParameters = {
+      QueryParameters(filterBy = createFilterBy(filterByPlain), search = search)
+    }
+
+    private def createFilterBy(maybePlain: Option[String]): Option[Map[String, String]] = {
+      maybePlain.map { plain =>
+        plain.split(";") map { item =>
+          item.split(":") toList
+        } collect { case name :: value :: Nil if name.trim.nonEmpty =>
+          name.trim -> value
+        } toMap
+      } filter (_.nonEmpty)
+    }
   }
 
   case class PagingRequest(page: Int, maybePageSize: Option[Int], sortBy: Option[String], asc: Boolean = true) {

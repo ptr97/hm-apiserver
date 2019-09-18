@@ -1,6 +1,5 @@
 package com.pwos.api.infrastructure
 
-import akka.http.scaladsl.server.Directives._
 import akka.http.scaladsl.model.HttpEntity
 import akka.http.scaladsl.model.HttpEntity.Strict
 import akka.http.scaladsl.model.HttpRequest
@@ -11,6 +10,7 @@ import akka.http.scaladsl.model.StatusCodes
 import akka.http.scaladsl.model.headers.RawHeader
 import akka.http.scaladsl.server.Directive
 import akka.http.scaladsl.server.Directive0
+import akka.http.scaladsl.server.Directives._
 import akka.http.scaladsl.server.Directives.mapRequest
 import cats.data.NonEmptyList
 import com.pwos.api.domain.HelloMountainsError._
@@ -152,7 +152,7 @@ package object http {
     def pagingParameters: Directive[(QueryParameters, PagingRequest)] = {
       parameters('page.as[Int] ?, 'pageSize.as[Int] ?, 'sortBy.as[String] ?, 'filterBy.as[String] ?, 'search.as[String] ?).tmap {
         case (page, pageSize, sortBy, filterBy, search) =>
-          val queryParameters: QueryParameters = QueryParameters(filterBy, search)
+          val queryParameters: QueryParameters = QueryParameters.fromRequest(filterBy, search)
           val pagingRequest: PagingRequest = PagingRequest.fromRequest(page, pageSize, sortBy)
           (queryParameters, pagingRequest)
       }
