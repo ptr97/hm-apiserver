@@ -3,8 +3,11 @@ package com.pwos.api.domain.users
 import cats.Id
 import cats.data.NonEmptyList
 import cats.implicits._
+import com.pwos.api.PaginatedResult
 import com.pwos.api.domain.HelloMountainsError
 import com.pwos.api.domain.HelloMountainsError._
+import com.pwos.api.domain.PagingRequest
+import com.pwos.api.domain.QueryParameters
 import com.pwos.api.domain.authentication.PasswordService
 import com.pwos.api.domain.users.UserModels.ChangePasswordModel
 import com.pwos.api.domain.users.UserModels.CreateUserModel
@@ -171,11 +174,17 @@ class UserServiceSpec extends FunSpec with Matchers {
   }
 
   describe("Getting list of users") {
+
+    val emptyQueryParams: QueryParameters = QueryParameters.empty
+    val emptyPagingReq: PagingRequest = PagingRequest.empty
+
     it("should return empty list when there is no users") {
       val (_, userService) = getTestResources
-      val getAllUsersResult: Id[List[UserView]] = userService.list(None, None)
+      val getAllUsersResult: Id[PaginatedResult[UserView]] = userService.list(emptyQueryParams, emptyPagingReq)
 
-      getAllUsersResult shouldBe List.empty[UserView]
+      getAllUsersResult.items shouldBe List.empty[UserView]
+      getAllUsersResult.totalCount shouldBe 0
+      getAllUsersResult.hasNextPage shouldBe false
     }
 
     it("should return all users") {
@@ -184,10 +193,13 @@ class UserServiceSpec extends FunSpec with Matchers {
       val u2: UserView = userDAO.create(userKlay).map(_.toView).get
       val u3: UserView = userDAO.create(userKevin).map(_.toView).get
       val u4: UserView = userDAO.create(admin).map(_.toView).get
+      val allUsers: List[UserView] = List(u1, u2, u3, u4)
 
-      val getAllUsersResult: Id[List[UserView]] = userService.list(None, None)
+      val getAllUsersResult: Id[PaginatedResult[UserView]] = userService.list(emptyQueryParams, emptyPagingReq)
 
-      getAllUsersResult shouldBe List(u1, u2, u3, u4)
+      getAllUsersResult.items shouldBe allUsers
+      getAllUsersResult.totalCount shouldBe allUsers.length
+      getAllUsersResult.hasNextPage shouldBe false
     }
 
     it("should return list of users with proper page size") {
@@ -196,10 +208,17 @@ class UserServiceSpec extends FunSpec with Matchers {
       val u2: UserView = userDAO.create(userKlay).map(_.toView).get
       val u3: UserView = userDAO.create(userKevin).map(_.toView).get
       val u4: UserView = userDAO.create(admin).map(_.toView).get
+      val allUsers: List[UserView] = List(u1, u2, u3, u4)
 
-      val getAllUsersResult: Id[List[UserView]] = userService.list(Some(2), None)
+      val pageSize = 2
+      val pagingRequest: PagingRequest = PagingRequest(0, Some(pageSize), None)
 
-      getAllUsersResult shouldBe List(u1, u2)
+      val getAllUsersResult: Id[PaginatedResult[UserView]] = userService.list(emptyQueryParams, pagingRequest)
+
+
+      getAllUsersResult.items shouldBe allUsers.take(pageSize)
+      getAllUsersResult.totalCount shouldBe allUsers.length
+      getAllUsersResult.hasNextPage shouldBe true
     }
 
     it("should return list of users with proper offset") {
@@ -208,10 +227,18 @@ class UserServiceSpec extends FunSpec with Matchers {
       val u2: UserView = userDAO.create(userKlay).map(_.toView).get
       val u3: UserView = userDAO.create(userKevin).map(_.toView).get
       val u4: UserView = userDAO.create(admin).map(_.toView).get
+      val allUsers: List[UserView] = List(u1, u2, u3, u4)
 
-      val getAllUsersResult: Id[List[UserView]] = userService.list(None, Some(2))
+      val pageSize = 2
+      val page = 1
+      val pagingRequest: PagingRequest = PagingRequest(page, Some(pageSize), None)
 
-      getAllUsersResult shouldBe List(u3, u4)
+      val getAllUsersResult: Id[PaginatedResult[UserView]] = userService.list(emptyQueryParams, pagingRequest)
+
+
+      getAllUsersResult.items shouldBe allUsers.drop(page * pageSize)
+      getAllUsersResult.totalCount shouldBe allUsers.length
+      getAllUsersResult.hasNextPage shouldBe false
     }
 
     it("should return list of users with proper page size and offset") {
@@ -220,10 +247,17 @@ class UserServiceSpec extends FunSpec with Matchers {
       val u2: UserView = userDAO.create(userKlay).map(_.toView).get
       val u3: UserView = userDAO.create(userKevin).map(_.toView).get
       val u4: UserView = userDAO.create(admin).map(_.toView).get
+      val allUsers: List[UserView] = List(u1, u2, u3, u4)
 
-      val getAllUsersResult: Id[List[UserView]] = userService.list(Some(2), Some(1))
+      val pageSize = 1
+      val page = 1
+      val pagingRequest: PagingRequest = PagingRequest(page, Some(pageSize), None)
 
-      getAllUsersResult shouldBe List(u2, u3)
+      val getAllUsersResult: Id[PaginatedResult[UserView]] = userService.list(emptyQueryParams, pagingRequest)
+
+      getAllUsersResult.items shouldBe List(u2)
+      getAllUsersResult.totalCount shouldBe allUsers.length
+      getAllUsersResult.hasNextPage shouldBe true
     }
   }
 

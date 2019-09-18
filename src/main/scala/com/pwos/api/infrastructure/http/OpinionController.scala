@@ -91,7 +91,10 @@ class OpinionController(opinionService: OpinionService[DBIO])(implicit ec: Execu
         complete {
           opinionService.updateOpinion(userInfo, opinionId, updateOpinionModel).value.unsafeRun map {
             case Right(opinion) => HttpOps.ok(opinion)
-            case Left(opinionValidationError) => HttpOps.badRequest(opinionValidationError) // TODO: also return proper http response depending on what error
+            case Left(opinionValidationError) => opinionValidationError match {
+              case opinionNotFoundError: OpinionNotFoundError.type => HttpOps.notFound(opinionNotFoundError)
+              case opinionDeletePrivilegeError: OpinionDeletePrivilegeError.type => HttpOps.forbidden(opinionDeletePrivilegeError)
+            }
           }
         }
       }

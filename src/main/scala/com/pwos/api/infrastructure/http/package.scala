@@ -152,8 +152,8 @@ package object http {
     def pagingParameters: Directive[(QueryParameters, PagingRequest)] = {
       parameters('page.as[Int] ?, 'pageSize.as[Int] ?, 'sortBy.as[String] ?, 'filterBy.as[String] ?, 'search.as[String] ?).tmap {
         case (page, pageSize, sortBy, filterBy, search) =>
-          val queryParameters = QueryParameters(filterBy, search)
-          val pagingRequest = PagingRequest(page.getOrElse(0), pageSize.getOrElse(PagingRequest.DefaultPageSize), sortBy)
+          val queryParameters: QueryParameters = QueryParameters(filterBy, search)
+          val pagingRequest: PagingRequest = PagingRequest.fromRequest(page, pageSize, sortBy)
           (queryParameters, pagingRequest)
       }
     }

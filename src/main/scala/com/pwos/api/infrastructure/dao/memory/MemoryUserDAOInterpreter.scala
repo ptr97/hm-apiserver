@@ -2,6 +2,9 @@ package com.pwos.api.infrastructure.dao.memory
 
 import cats.Id
 import cats.implicits._
+import com.pwos.api.PaginatedResult
+import com.pwos.api.domain.PagingRequest
+import com.pwos.api.domain.QueryParameters
 import com.pwos.api.domain.users.User
 import com.pwos.api.domain.users.UserDAOAlgebra
 
@@ -50,8 +53,21 @@ class MemoryUserDAOInterpreter extends UserDAOAlgebra[Id] {
     } yield true) getOrElse false
   }
 
-  override def all: Id[List[User]] = {
-    this.users
+  override def list(queryParameters: QueryParameters, pagingRequest: PagingRequest): Id[PaginatedResult[User]] = {
+    val sortedUsers: List[User] = users.sortBy(_.id)
+    val withOffset: List[User] = sortedUsers.drop(pagingRequest.offset)
+    val withLimit: List[User] = pagingRequest.maybePageSize.map { pageSize =>
+      withOffset.take(pageSize)
+    } getOrElse withOffset
+
+    val totalCount: Int = users.length
+    val hasNextPage: Boolean = totalCount > pagingRequest.offset + withLimit.length
+
+    PaginatedResult(
+      totalCount = totalCount,
+      items = withLimit,
+      hasNextPage = hasNextPage
+    )
   }
 }
 

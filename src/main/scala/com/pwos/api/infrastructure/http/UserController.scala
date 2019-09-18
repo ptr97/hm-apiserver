@@ -6,6 +6,7 @@ import com.pwos.api.domain.users.UserModels._
 import com.pwos.api.domain.users.UserRole
 import com.pwos.api.domain.users.UserService
 import com.pwos.api.infrastructure.http.JsonImplicits._
+import com.pwos.api.infrastructure.http.PagingOps.pagingParameters
 import com.pwos.api.infrastructure.http.authentication.SecuredAccess
 import com.pwos.api.infrastructure.http.versions._
 import com.pwos.api.infrastructure.implicits._
@@ -27,16 +28,14 @@ class UserController(userService: UserService[DBIO])(implicit ec: ExecutionConte
 
   def listUsers: Route = path(v1 / USERS) {
     authorizedGet(UserRole.Admin) { _ =>
-      parameters('page.as[Int] ?, 'pageSize.as[Int] ?, 'sortBy.as[String] ?, 'filterBy.as[String] ?, 'search.as[String] ?) {
-        (page, pageSize, sortBy, filterBy, search) =>
-          println(s"User Page Params = $page, $pageSize, $sortBy, $filterBy, $search")
-          complete {
-            val offset: Option[Int] = pageSize.flatMap(ps => page.map(p => ps * p))
-            userService.list(pageSize, offset).unsafeRun map (HttpOps.ok(_))
-          }
+      pagingParameters { (queryParameters, pagingRequest) =>
+        complete {
+          userService.list(queryParameters, pagingRequest).unsafeRun map (HttpOps.ok(_))
+        }
       }
     }
   }
+
 
   def getUser: Route = path(v1 / USERS / LongNumber) { userId: Long =>
     authorizedGet(UserRole.Admin) { _ =>

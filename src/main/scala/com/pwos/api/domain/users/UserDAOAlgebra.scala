@@ -1,5 +1,9 @@
 package com.pwos.api.domain.users
 
+import com.pwos.api.PaginatedResult
+import com.pwos.api.domain.PagingRequest
+import com.pwos.api.domain.QueryParameters
+
 
 trait UserDAOAlgebra[F[_]] {
 
@@ -15,6 +19,6 @@ trait UserDAOAlgebra[F[_]] {
 
   def markDeleted(id: Long): F[Boolean]
 
-  def all: F[List[User]]
+  def list(queryParameters: QueryParameters, pagingRequest: PagingRequest): F[PaginatedResult[User]]
 
 }

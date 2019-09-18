@@ -2,11 +2,13 @@ package com.pwos.api.domain.users
 
 import cats.Monad
 import cats.data.EitherT
-import cats.data.IdT
 import cats.data.NonEmptyList
 import cats.data.OptionT
 import cats.implicits._
+import com.pwos.api.PaginatedResult
 import com.pwos.api.domain.HelloMountainsError._
+import com.pwos.api.domain.PagingRequest
+import com.pwos.api.domain.QueryParameters
 import com.pwos.api.domain.authentication.PasswordService
 import com.pwos.api.domain.authentication.PasswordService.Password
 import com.pwos.api.domain.users.UserModels._
@@ -41,14 +43,10 @@ class UserService[F[_] : Monad](userDAO: UserDAOAlgebra[F], userValidation: User
     EitherT.fromOptionF(userDAO.get(id), UserNotFoundError)
   }
 
-  def list(pageSize: Option[Int], offset: Option[Int]): F[List[UserView]] = {
-    val users: IdT[F, List[UserView]] = for {
-      allUsers <- IdT(userDAO.all).map(_.sortBy(_.id)).map(_.flatMap(_.toView))
-      withOffset = offset.map(off => allUsers.drop(off)).getOrElse(allUsers)
-      result = pageSize.map(size => withOffset.take(size)).getOrElse(withOffset)
-    } yield result
-
-    users.value
+  def list(queryParameters: QueryParameters, pagingRequest: PagingRequest): F[PaginatedResult[UserView]] = {
+    userDAO.list(queryParameters, pagingRequest).map { a: PaginatedResult[User] =>
+      a.flatMapResult(_.toView)
+    }
   }
 
   def updateCredentials(id: Long, updateUserCredentialsModel: UpdateUserCredentialsModel): EitherT[F, NonEmptyList[UserValidationError], UserView] = {
