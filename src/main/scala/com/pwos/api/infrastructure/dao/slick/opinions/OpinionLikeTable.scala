@@ -7,9 +7,9 @@ import scala.language.postfixOps
 
 
 case class OpinionLike(
-                       opinionId: Long,
-                       userId: Long
-                     )
+  opinionId: Long,
+  userId: Long
+)
 
 
 class OpinionLikeTable(tag: Tag) extends Table[OpinionLike](tag, "OPINION_LIKE") {
