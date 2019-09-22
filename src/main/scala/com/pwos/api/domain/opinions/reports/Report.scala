@@ -34,3 +34,25 @@ object Report {
     )
   }
 }
+
+case class ReportView(
+  authorId: Long,
+  authorName: String,
+  opinionId: Long,
+  body: Option[String],
+  reportCategory: ReportCategory.ReportCategory,
+  creationDate: DateTime
+)
+
+object ReportView {
+  def fromReport(userId: Long, userName: String, report: Report): ReportView = {
+    ReportView(
+      authorId = userId,
+      authorName = userName,
+      opinionId = report.opinionId,
+      body = report.body,
+      reportCategory = report.reportCategory,
+      creationDate = report.creationDate
+    )
+  }
+}

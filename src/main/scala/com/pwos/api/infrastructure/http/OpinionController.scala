@@ -38,6 +38,19 @@ class OpinionController(opinionService: OpinionService[DBIO])(implicit ec: Execu
     }
   }
 
+  def getOpinionReports: Route = path(v1 / PLACES / OPINIONS / JavaUUID / REPORTS) { opinionUUID: UUID =>
+    authorizedGet(UserRole.Admin) { _ =>
+      pagingParameters { (queryParameters, pagingRequest) =>
+        complete {
+          opinionService.reports(opinionUUID.toString, queryParameters, pagingRequest).value.unsafeRun map {
+            case Right(reports) => HttpOps.ok(reports)
+            case Left(opinionNotFoundError) => HttpOps.badRequest(opinionNotFoundError)
+          }
+        }
+      }
+    }
+  }
+
   def listOpinionsForPlace: Route = path(v1 / PLACES / LongNumber / OPINIONS) { placeId: Long =>
     authorizedGet(UserRole.User) { _ =>
       pagingParameters { (queryParameters, pagingRequest) =>
@@ -103,13 +116,12 @@ class OpinionController(opinionService: OpinionService[DBIO])(implicit ec: Execu
     }
   }
 
-  def reportOpinion: Route = path(v1 / PLACES / LongNumber / OPINIONS / JavaUUID / REPORT) { (_: Long, opinionUUID: UUID) =>
+  def reportOpinion: Route = path(v1 / PLACES / LongNumber / OPINIONS / JavaUUID / REPORTS) { (_: Long, opinionUUID: UUID) =>
     authorizedPost(UserRole.User) { userInfo: UserInfo =>
       entity(as[ReportOpinionModel]) { reportOpinionModel =>
         complete {
           opinionService.reportOpinion(userInfo, opinionUUID.toString, reportOpinionModel).value.unsafeRun map {
             case Right(true) => HttpOps.ok("Opinion reported")
-            case Right(false) => HttpOps.internalServerError("Something went wrong")
             case Left(opinionNotFoundError) => HttpOps.badRequest(opinionNotFoundError)
           }
         }
@@ -130,12 +142,25 @@ class OpinionController(opinionService: OpinionService[DBIO])(implicit ec: Execu
     }
   }
 
+  def updateOpinionLikes: Route = path(v1 / PLACES / LongNumber / OPINIONS / JavaUUID / "likes") { (_: Long, opinionUUID: UUID) =>
+    authorizedPut(UserRole.User) { userInfo =>
+      entity(as[UpdateOpinionLikesModel]) { upUpdateOpinionLikesModel =>
+        complete {
+          opinionService.updateOpinionLikes(userInfo, opinionUUID.toString, upUpdateOpinionLikesModel).value.unsafeRun map {
+            case Right(opinion) => HttpOps.ok(opinion)
+            case Left(opinionValidationError) => HttpOps.badRequest(opinionValidationError)
+          }
+        }
+      }
+    }
+  }
+
 }
 
 
 object OpinionController {
   val OPINIONS = "opinions"
-  val REPORT = "report"
+  val REPORTS = "reports"
 
   def apply(opinionService: OpinionService[DBIO])(implicit ec: ExecutionContext, database: Database): OpinionController =
     new OpinionController(opinionService)

@@ -2,20 +2,30 @@ package com.pwos.api.domain.opinions
 
 import cats.Monad
 import cats.data.EitherT
+import cats.implicits._
 import com.pwos.api.PaginatedResult
 import com.pwos.api.domain.HelloMountainsError._
 import com.pwos.api.domain.PagingRequest
 import com.pwos.api.domain.QueryParameters
 import com.pwos.api.domain.opinions.OpinionModels._
 import com.pwos.api.domain.opinions.reports.Report
+import com.pwos.api.domain.opinions.reports.ReportDAOAlgebra
+import com.pwos.api.domain.opinions.reports.ReportView
 import com.pwos.api.domain.places.PlaceValidationAlgebra
+import com.pwos.api.domain.users.User
+import com.pwos.api.domain.users.UserDAOAlgebra
 import com.pwos.api.domain.users.UserInfo
 import com.pwos.api.domain.users.UserRole
 import com.pwos.api.domain.users.UserRole.UserRole
 import org.joda.time.DateTime
 
 
-class OpinionService[F[_] : Monad](opinionDAO: OpinionDAOAlgebra[F], opinionValidation: OpinionValidationAlgebra[F], placeValidation: PlaceValidationAlgebra[F]) {
+class OpinionService[F[_] : Monad](
+  opinionDAO: OpinionDAOAlgebra[F],
+  reportDAO: ReportDAOAlgebra[F],
+  userDAO: UserDAOAlgebra[F],
+  opinionValidation: OpinionValidationAlgebra[F],
+  placeValidation: PlaceValidationAlgebra[F]) {
 
   def list(maybePlaceId: Option[Long], queryParameters: QueryParameters, pagingRequest: PagingRequest): F[PaginatedResult[Opinion]] = {
     maybePlaceId map { placeId =>
@@ -28,13 +38,7 @@ class OpinionService[F[_] : Monad](opinionDAO: OpinionDAOAlgebra[F], opinionVali
   def addOpinion(userInfo: UserInfo, placeId: Long, createOpinionModel: CreateOpinionModel): EitherT[F, PlaceNotFoundError.type, Opinion] = {
     for {
       _ <- placeValidation.exists(placeId)
-      opinion = Opinion(
-        uuid = Opinion.generateUUID,
-        placeId = placeId,
-        authorId = userInfo.id,
-        body = createOpinionModel.body,
-        tags = createOpinionModel.tags,
-        referenceDate = createOpinionModel.referenceDate.getOrElse(DateTime.now()))
+      opinion = Opinion.fromCreateOpinionModel(placeId, userInfo.id, createOpinionModel)
       newOpinion <- EitherT.liftF(opinionDAO.create(opinion))
     } yield newOpinion
   }
@@ -82,7 +86,7 @@ class OpinionService[F[_] : Monad](opinionDAO: OpinionDAOAlgebra[F], opinionVali
       _ <- validateOwnershipIfNonAdmin(userInfo.role)(userInfo.id, opinionUUID)
       opinionToUpdate <- getOpinion(opinionUUID)
       updatedOpinion = updateOpinionData(opinionToUpdate)
-      updateResult <- EitherT.fromOptionF(opinionDAO.update(updatedOpinion), OpinionNotFoundError : OpinionValidationError)
+      updateResult <- EitherT.fromOptionF(opinionDAO.update(updatedOpinion), OpinionNotFoundError: OpinionValidationError)
     } yield updateResult
   }
 
@@ -91,8 +95,8 @@ class OpinionService[F[_] : Monad](opinionDAO: OpinionDAOAlgebra[F], opinionVali
       _ <- opinionValidation.exists(opinionUUID)
       opinion <- getOpinion(opinionUUID)
       report = Report.fromReportOpinionModel(userInfo.id, opinion.id.get, reportOpinionModel)
-//      reportResult <- EitherT.fromOptionT(reportDAO.reportOpinion(report))
-    } yield ???
+      _ <- EitherT.liftF(reportDAO.create(report))
+    } yield true
   }
 
   def updateOpinionStatus(userInfo: UserInfo, opinionUUID: String, updateOpinionStatusModel: UpdateOpinionStatusModel): EitherT[F, OpinionNotFoundError.type, Opinion] = {
@@ -103,9 +107,82 @@ class OpinionService[F[_] : Monad](opinionDAO: OpinionDAOAlgebra[F], opinionVali
     } yield updatedOpinion
   }
 
+  def updateOpinionLikes(userInfo: UserInfo, opinionUUID: String, updateOpinionLikesModel: UpdateOpinionLikesModel): EitherT[F, OpinionValidationError, Opinion] = {
+
+    def likeOrUnlikeOpinion(opinion: Opinion): Either[OpinionValidationError, Opinion] = {
+      val newLikesOrError: Either[OpinionValidationError, List[String]] = if (updateOpinionLikesModel.like) {
+        Either.fromOption(addLike(opinion.likes), OpinionAlreadyLikedError: OpinionValidationError)
+      } else {
+        Either.fromOption(removeLike(opinion.likes), OpinionWasNotLikedError: OpinionValidationError)
+      }
+
+      newLikesOrError map { likes =>
+        opinion.copy(likes = likes)
+      }
+    }
+
+    def addLike(likes: List[String]): Option[List[String]] = {
+      if (likes.contains(userInfo.userName)) {
+        None
+      } else {
+        Some(userInfo.userName :: likes)
+      }
+    }
+
+    def removeLike(likes: List[String]): Option[List[String]] = {
+      if (likes.contains(userInfo.userName)) {
+        Some(likes.filterNot(_ == userInfo.userName))
+      } else {
+        None
+      }
+    }
+
+    for {
+      _ <- opinionValidation.exists(opinionUUID)
+      opinion <- getOpinion(opinionUUID)
+      updatedOpinion <- EitherT.fromEither(likeOrUnlikeOpinion(opinion))
+      updateOpinionResult <- EitherT.fromOptionF(opinionDAO.update(updatedOpinion), OpinionNotFoundError: OpinionValidationError)
+    } yield updateOpinionResult
+  }
+
+  def reports(opinionUUID: String, queryParameters: QueryParameters, pagingRequest: PagingRequest): EitherT[F, OpinionNotFoundError.type, PaginatedResult[ReportView]] = {
+
+    def collectReportAuthors(reports: List[Report]): F[Map[Long, User]] = {
+      val authorsIds: List[Long] = reports.map(_.authorId)
+      val authorsF: F[List[User]] = userDAO.get(authorsIds)
+
+      authorsF.map { authors: List[User] =>
+        reports.foldLeft(Map.empty[Long, User]) { (acc, report) =>
+          val author: User = authors.find(_.id == Option(report.authorId)).get
+          acc + (report.id.get -> author)
+        }
+      }
+    }
+
+    def buildReportViews(reports: List[Report], authorsMapping: Map[Long, User]): List[ReportView] = {
+      reports.map { report: Report =>
+        val author: User = authorsMapping(report.id.get)
+        ReportView.fromReport(author.id.get, author.userName, report)
+      }
+    }
+
+    for {
+      _ <- opinionValidation.exists(opinionUUID)
+      opinion <- getOpinion(opinionUUID)
+      reportsPaginated <- EitherT.liftF(reportDAO.list(opinion.id.get))
+      reportAuthors <- EitherT.liftF(collectReportAuthors(reportsPaginated.items))
+      reportViews = buildReportViews(reportsPaginated.items, reportAuthors)
+    } yield reportsPaginated.copy(items = reportViews)
+  }
+
 }
 
 object OpinionService {
-  def apply[F[_] : Monad](opinionDAO: OpinionDAOAlgebra[F], opinionValidation: OpinionValidationAlgebra[F], placeValidation: PlaceValidationAlgebra[F]): OpinionService[F] =
-    new OpinionService(opinionDAO, opinionValidation, placeValidation)
+  def apply[F[_] : Monad](
+    opinionDAO: OpinionDAOAlgebra[F],
+    reportDAO: ReportDAOAlgebra[F],
+    userDAO: UserDAOAlgebra[F],
+    opinionValidation: OpinionValidationAlgebra[F],
+    placeValidation: PlaceValidationAlgebra[F]): OpinionService[F] =
+    new OpinionService(opinionDAO, reportDAO, userDAO, opinionValidation, placeValidation)
 }

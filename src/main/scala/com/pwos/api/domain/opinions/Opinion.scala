@@ -2,6 +2,7 @@ package com.pwos.api.domain.opinions
 
 import java.util.UUID
 
+import com.pwos.api.domain.opinions.OpinionModels.CreateOpinionModel
 import com.pwos.api.domain.opinions.reports.ReportCategory
 import com.pwos.api.domain.opinions.tags.Tag
 import org.joda.time.DateTime
@@ -26,6 +27,17 @@ object Opinion {
   def generateUUID: String = {
     UUID.randomUUID().toString.replace("-","")
   }
+
+  def fromCreateOpinionModel(placeId: Long, userId: Long, createOpinionModel: CreateOpinionModel): Opinion = {
+    Opinion(
+      uuid = Opinion.generateUUID,
+      placeId = placeId,
+      authorId = userId,
+      body = createOpinionModel.body,
+      tags = createOpinionModel.tags,
+      referenceDate = createOpinionModel.referenceDate.getOrElse(DateTime.now())
+    )
+  }
 }
 
 
@@ -46,6 +58,10 @@ object OpinionModels {
 
   case class UpdateOpinionStatusModel(
     blocked: Boolean
+  )
+
+  case class UpdateOpinionLikesModel(
+    like: Boolean
   )
 
   case class ReportOpinionModel(

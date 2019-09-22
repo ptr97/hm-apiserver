@@ -11,6 +11,8 @@ trait UserDAOAlgebra[F[_]] {
 
   def get(id: Long): F[Option[User]]
 
+  def get(ids: List[Long]): F[List[User]]
+
   def findByName(name: String): F[Option[User]]
 
   def findByEmail(email: String): F[Option[User]]

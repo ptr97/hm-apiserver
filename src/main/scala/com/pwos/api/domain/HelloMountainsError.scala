@@ -69,4 +69,12 @@ object HelloMountainsError {
     override def message: String = "You cannot modify opinion which you do not own."
   }
 
+  case object OpinionAlreadyLikedError extends OpinionValidationError {
+    override def message: String = "You cannot like opinion twice."
+  }
+
+  case object OpinionWasNotLikedError extends OpinionValidationError {
+    override def message: String = "You cannot unlike opinion which you do not like."
+  }
+
 }
