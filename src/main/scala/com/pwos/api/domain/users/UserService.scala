@@ -104,7 +104,7 @@ class UserService[F[_] : Monad](userDAO: UserDAOAlgebra[F], userValidation: User
   def updateStatus(id: Long, updateUserStatusModel: UpdateUserStatusModel): EitherT[F, UserValidationError, User] = {
     for {
       _ <- userValidation.exists(Option(id))
-      user <- EitherT.liftF(userDAO.get(id)).map(_.get)
+      user <- getFullData(id)
       updatedUser <- EitherT.fromOptionF(userDAO.update(user.copy(banned = updateUserStatusModel.banned)), UserNotFoundError: UserValidationError)
     } yield updatedUser
   }
