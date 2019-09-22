@@ -65,8 +65,8 @@ object HelloMountainsError {
     override def message: String = "Opinion does not exist."
   }
 
-  case object OpinionDeletePrivilegeError extends OpinionValidationError {
-    override def message: String = "You cannot delete opinion which is not yours."
+  case object OpinionOwnershipError extends OpinionValidationError {
+    override def message: String = "You cannot modify opinion which you do not own."
   }
 
 }
