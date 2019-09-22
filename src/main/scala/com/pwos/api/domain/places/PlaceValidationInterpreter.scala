@@ -15,16 +15,10 @@ final class PlaceValidationInterpreter[F[_] : Monad](placeDAO: PlaceDAOAlgebra[F
     }
   }
 
-  override def exists(placeId: Option[Long]): EitherT[F, PlaceNotFoundError.type, Unit] = EitherT {
-    placeId.map { id =>
-      placeDAO.get(id).map {
-        case Some(_) => Right(())
-        case None => Left(PlaceNotFoundError)
-      }
-    }.getOrElse {
-      Either.left[PlaceNotFoundError.type, Unit](PlaceNotFoundError).pure[F]
-    }
+  override def exists(placeId: Long): EitherT[F, PlaceNotFoundError.type, Unit] =  {
+    EitherT.fromOptionF(placeDAO.get(placeId), PlaceNotFoundError).map(_ => ())
   }
+
 }
 
 object PlaceValidationInterpreter {

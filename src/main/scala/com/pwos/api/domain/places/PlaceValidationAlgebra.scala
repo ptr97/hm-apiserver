@@ -8,6 +8,6 @@ trait PlaceValidationAlgebra[F[_]] {
 
   def doesNotExists(place: Place): EitherT[F, PlaceAlreadyExistsError, Unit]
 
-  def exists(placeId: Option[Long]): EitherT[F, PlaceNotFoundError.type, Unit]
+  def exists(placeId: Long): EitherT[F, PlaceNotFoundError.type, Unit]
 
 }
