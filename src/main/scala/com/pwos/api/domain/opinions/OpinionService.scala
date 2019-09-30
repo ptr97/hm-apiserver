@@ -4,6 +4,7 @@ import cats.Monad
 import cats.data.EitherT
 import cats.implicits._
 import com.pwos.api.PaginatedResult
+import com.pwos.api.domain.HelloMountainsError.OpinionValidationError
 import com.pwos.api.domain.HelloMountainsError._
 import com.pwos.api.domain.PagingRequest
 import com.pwos.api.domain.QueryParameters
@@ -140,7 +141,7 @@ class OpinionService[F[_] : Monad](
     for {
       _ <- opinionValidation.exists(opinionUUID)
       opinion <- getOpinion(opinionUUID)
-      updatedOpinion <- EitherT.fromEither(likeOrUnlikeOpinion(opinion))
+      updatedOpinion <- EitherT.fromEither(likeOrUnlikeOpinion(opinion)) : EitherT[F, OpinionValidationError, Opinion]
       updateOpinionResult <- EitherT.fromOptionF(opinionDAO.update(updatedOpinion), OpinionNotFoundError: OpinionValidationError)
     } yield updateOpinionResult
   }

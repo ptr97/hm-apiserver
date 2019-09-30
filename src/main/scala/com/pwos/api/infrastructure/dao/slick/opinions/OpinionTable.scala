@@ -40,6 +40,23 @@ case class OpinionDTO(
   }
 }
 
+object OpinionDTO {
+  def fromOpinion(opinion: Opinion): OpinionDTO = {
+    OpinionDTO(
+      uuid = opinion.uuid,
+      placeId = opinion.placeId,
+      authorId = opinion.authorId,
+      body = opinion.body,
+      referenceDate = opinion.referenceDate,
+      lastModified = opinion.lastModified,
+      creationDate = opinion.creationDate,
+      blocked = opinion.blocked,
+      deleted = opinion.deleted,
+      id = opinion.id
+    )
+  }
+}
+
 
 class OpinionTable(tag: Tag) extends Table[OpinionDTO](tag, "OPINION") {
 

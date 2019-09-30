@@ -28,6 +28,12 @@ class MemoryUserDAOInterpreter extends UserDAOAlgebra[Id] {
     this.users.find(_.id === Option(id))
   }
 
+  override def get(ids: List[Long]): Id[List[User]] = {
+    this.users.filter { user =>
+      ids.contains(user.id.get)
+    }
+  }
+
   override def findByName(name: String): Id[Option[User]] = {
     this.users.find(_.userName === name)
   }

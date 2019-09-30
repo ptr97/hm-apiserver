@@ -27,6 +27,10 @@ final class SlickUserDAOInterpreter(implicit ec: ExecutionContext) extends UserD
     users.filter(_.id === id).result.headOption
   }
 
+  override def get(ids: List[Long]): DBIO[List[User]] = {
+    users.filter(_.id inSet ids).result.map(_.toList)
+  }
+
   override def findByName(name: String): DBIO[Option[User]] = {
     users.filter(_.username === name).result.headOption
   }

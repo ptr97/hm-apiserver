@@ -10,7 +10,8 @@ import scala.concurrent.ExecutionContext
 
 
 final class SlickPlaceDAOInterpreter(implicit ec: ExecutionContext) extends PlaceDAOAlgebra[DBIO] {
-  val places: TableQuery[PlaceTable] = TableQuery[PlaceTable]
+
+  private val places: TableQuery[PlaceTable] = TableQuery[PlaceTable]
 
   override def create(place: Place): DBIO[Place] = {
     val newPlaceId: DBIO[Long] = places returning places.map(_.id) += place
