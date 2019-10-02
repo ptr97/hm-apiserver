@@ -44,29 +44,29 @@ class OpinionService[F[_] : Monad](
     } yield newOpinion
   }
 
-  def getOpinion(opinionUUID: String): EitherT[F, OpinionNotFoundError.type, Opinion] = {
-    EitherT.fromOptionF(opinionDAO.get(opinionUUID), OpinionNotFoundError)
+  def getOpinion(opinionId: Long): EitherT[F, OpinionNotFoundError.type, Opinion] = {
+    EitherT.fromOptionF(opinionDAO.get(opinionId), OpinionNotFoundError)
   }
 
-  private def validateOwnershipIfNonAdmin(userRole: UserRole): (Long, String) => EitherT[F, OpinionOwnershipError.type, Unit] = {
-    (userId, opinionUUID) => {
+  private def validateOwnershipIfNonAdmin(userRole: UserRole): (Long, Long) => EitherT[F, OpinionOwnershipError.type, Unit] = {
+    (userId, opinionId) => {
       if (userRole == UserRole.Admin) {
         EitherT.rightT(())
       } else {
-        opinionValidation.validateOwnership(userId, opinionUUID)
+        opinionValidation.validateOwnership(userId, opinionId)
       }
     }
   }
 
-  def deleteOpinion(userInfo: UserInfo, opinionUUID: String): EitherT[F, OpinionValidationError, Boolean] = {
+  def deleteOpinion(userInfo: UserInfo, opinionId: Long): EitherT[F, OpinionValidationError, Boolean] = {
     for {
-      _ <- opinionValidation.exists(opinionUUID)
-      _ <- validateOwnershipIfNonAdmin(userInfo.role)(userInfo.id, opinionUUID)
-      deleteResult <- EitherT.liftF(opinionDAO.markDeleted(opinionUUID))
+      _ <- opinionValidation.exists(opinionId)
+      _ <- validateOwnershipIfNonAdmin(userInfo.role)(userInfo.id, opinionId)
+      deleteResult <- EitherT.liftF(opinionDAO.markDeleted(opinionId))
     } yield deleteResult
   }
 
-  def updateOpinion(userInfo: UserInfo, opinionUUID: String, updateOpinionModel: UpdateOpinionModel): EitherT[F, OpinionValidationError, Opinion] = {
+  def updateOpinion(userInfo: UserInfo, opinionId: Long, updateOpinionModel: UpdateOpinionModel): EitherT[F, OpinionValidationError, Opinion] = {
     type OpinionUpdate = Opinion => Option[Opinion]
 
     val updateLastModified: OpinionUpdate = opinion => Option(opinion.copy(lastModified = DateTime.now))
@@ -83,32 +83,32 @@ class OpinionService[F[_] : Monad](
     }
 
     for {
-      _ <- opinionValidation.exists(opinionUUID)
-      _ <- validateOwnershipIfNonAdmin(userInfo.role)(userInfo.id, opinionUUID)
-      opinionToUpdate <- getOpinion(opinionUUID)
+      _ <- opinionValidation.exists(opinionId)
+      _ <- validateOwnershipIfNonAdmin(userInfo.role)(userInfo.id, opinionId)
+      opinionToUpdate <- getOpinion(opinionId)
       updatedOpinion = updateOpinionData(opinionToUpdate)
       updateResult <- EitherT.fromOptionF(opinionDAO.update(updatedOpinion), OpinionNotFoundError: OpinionValidationError)
     } yield updateResult
   }
 
-  def reportOpinion(userInfo: UserInfo, opinionUUID: String, reportOpinionModel: ReportOpinionModel): EitherT[F, OpinionNotFoundError.type, Boolean] = {
+  def reportOpinion(userInfo: UserInfo, opinionId: Long, reportOpinionModel: ReportOpinionModel): EitherT[F, OpinionNotFoundError.type, Boolean] = {
     for {
-      _ <- opinionValidation.exists(opinionUUID)
-      opinion <- getOpinion(opinionUUID)
+      _ <- opinionValidation.exists(opinionId)
+      opinion <- getOpinion(opinionId)
       report = Report.fromReportOpinionModel(userInfo.id, opinion.id.get, reportOpinionModel)
       _ <- EitherT.liftF(reportDAO.create(report))
     } yield true
   }
 
-  def updateOpinionStatus(userInfo: UserInfo, opinionUUID: String, updateOpinionStatusModel: UpdateOpinionStatusModel): EitherT[F, OpinionNotFoundError.type, Opinion] = {
+  def updateOpinionStatus(userInfo: UserInfo, opinionId: Long, updateOpinionStatusModel: UpdateOpinionStatusModel): EitherT[F, OpinionNotFoundError.type, Opinion] = {
     for {
-      _ <- opinionValidation.exists(opinionUUID)
-      opinion <- getOpinion(opinionUUID)
+      _ <- opinionValidation.exists(opinionId)
+      opinion <- getOpinion(opinionId)
       updatedOpinion <- EitherT.fromOptionF(opinionDAO.update(opinion.copy(deleted = updateOpinionStatusModel.blocked)), OpinionNotFoundError)
     } yield updatedOpinion
   }
 
-  def updateOpinionLikes(userInfo: UserInfo, opinionUUID: String, updateOpinionLikesModel: UpdateOpinionLikesModel): EitherT[F, OpinionValidationError, Opinion] = {
+  def updateOpinionLikes(userInfo: UserInfo, opinionId: Long, updateOpinionLikesModel: UpdateOpinionLikesModel): EitherT[F, OpinionValidationError, Opinion] = {
 
     def likeOrUnlikeOpinion(opinion: Opinion): Either[OpinionValidationError, Opinion] = {
       val newLikesOrError: Either[OpinionValidationError, List[String]] = if (updateOpinionLikesModel.like) {
@@ -139,14 +139,14 @@ class OpinionService[F[_] : Monad](
     }
 
     for {
-      _ <- opinionValidation.exists(opinionUUID)
-      opinion <- getOpinion(opinionUUID)
+      _ <- opinionValidation.exists(opinionId)
+      opinion <- getOpinion(opinionId)
       updatedOpinion <- EitherT.fromEither(likeOrUnlikeOpinion(opinion)) : EitherT[F, OpinionValidationError, Opinion]
       updateOpinionResult <- EitherT.fromOptionF(opinionDAO.update(updatedOpinion), OpinionNotFoundError: OpinionValidationError)
     } yield updateOpinionResult
   }
 
-  def reports(opinionUUID: String, queryParameters: QueryParameters, pagingRequest: PagingRequest): EitherT[F, OpinionNotFoundError.type, PaginatedResult[ReportView]] = {
+  def reports(opinionId: Long, queryParameters: QueryParameters, pagingRequest: PagingRequest): EitherT[F, OpinionNotFoundError.type, PaginatedResult[ReportView]] = {
 
     def collectReportAuthors(reports: List[Report]): F[Map[Long, User]] = {
       val authorsIds: List[Long] = reports.map(_.authorId)
@@ -168,8 +168,8 @@ class OpinionService[F[_] : Monad](
     }
 
     for {
-      _ <- opinionValidation.exists(opinionUUID)
-      opinion <- getOpinion(opinionUUID)
+      _ <- opinionValidation.exists(opinionId)
+      opinion <- getOpinion(opinionId)
       reportsPaginated <- EitherT.liftF(reportDAO.list(opinion.id.get))
       reportAuthors <- EitherT.liftF(collectReportAuthors(reportsPaginated.items))
       reportViews = buildReportViews(reportsPaginated.items, reportAuthors)

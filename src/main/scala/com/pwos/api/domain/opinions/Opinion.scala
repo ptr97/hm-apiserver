@@ -1,7 +1,5 @@
 package com.pwos.api.domain.opinions
 
-import java.util.UUID
-
 import com.pwos.api.domain.opinions.OpinionModels.CreateOpinionModel
 import com.pwos.api.domain.opinions.reports.ReportCategory
 import com.pwos.api.domain.opinions.tags.Tag
@@ -9,7 +7,6 @@ import org.joda.time.DateTime
 
 
 case class Opinion(
-  uuid: String,
   placeId: Long,
   authorId: Long,
   body: Option[String],
@@ -24,13 +21,8 @@ case class Opinion(
 )
 
 object Opinion {
-  def generateUUID: String = {
-    UUID.randomUUID().toString.replace("-","")
-  }
-
   def fromCreateOpinionModel(placeId: Long, userId: Long, createOpinionModel: CreateOpinionModel): Opinion = {
     Opinion(
-      uuid = Opinion.generateUUID,
       placeId = placeId,
       authorId = userId,
       body = createOpinionModel.body,

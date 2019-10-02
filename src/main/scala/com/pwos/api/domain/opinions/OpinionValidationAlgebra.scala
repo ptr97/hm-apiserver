@@ -6,8 +6,8 @@ import com.pwos.api.domain.HelloMountainsError._
 
 trait OpinionValidationAlgebra[F[_]] {
 
-  def exists(opinionUUID: String): EitherT[F, OpinionNotFoundError.type, Unit]
+  def exists(opinionId: Long): EitherT[F, OpinionNotFoundError.type, Unit]
 
-  def validateOwnership(userId: Long, opinionUUID: String): EitherT[F, OpinionOwnershipError.type, Unit]
+  def validateOwnership(userId: Long, opinionId: Long): EitherT[F, OpinionOwnershipError.type, Unit]
 
 }

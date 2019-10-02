@@ -1,7 +1,5 @@
 package com.pwos.api.infrastructure.http
 
-import java.util.UUID
-
 import akka.http.scaladsl.server.Directives._
 import akka.http.scaladsl.server.Route
 import com.pwos.api.domain.HelloMountainsError._
@@ -38,11 +36,11 @@ class OpinionController(opinionService: OpinionService[DBIO])(implicit ec: Execu
     }
   }
 
-  def getOpinionReports: Route = path(v1 / PLACES / OPINIONS / JavaUUID / REPORTS) { opinionUUID: UUID =>
+  def getOpinionReports: Route = path(v1 / PLACES / OPINIONS / LongNumber / REPORTS) { opinionId: Long =>
     authorizedGet(UserRole.Admin) { _ =>
       pagingParameters { (queryParameters, pagingRequest) =>
         complete {
-          opinionService.reports(opinionUUID.toString, queryParameters, pagingRequest).value.unsafeRun map {
+          opinionService.reports(opinionId, queryParameters, pagingRequest).value.unsafeRun map {
             case Right(reports) => HttpOps.ok(reports)
             case Left(opinionNotFoundError) => HttpOps.badRequest(opinionNotFoundError)
           }
@@ -74,10 +72,10 @@ class OpinionController(opinionService: OpinionService[DBIO])(implicit ec: Execu
     }
   }
 
-  def getOpinion: Route = path(v1 / PLACES / LongNumber / OPINIONS / JavaUUID) { (_, opinionUUID: UUID) =>
+  def getOpinion: Route = path(v1 / PLACES / LongNumber / OPINIONS / LongNumber) { (_, opinionId: Long) =>
     authorizedGet(UserRole.User) { _ =>
       complete {
-        opinionService.getOpinion(opinionUUID.toString).value.unsafeRun map {
+        opinionService.getOpinion(opinionId).value.unsafeRun map {
           case Right(opinion) => HttpOps.created(opinion)
           case Left(opinionNotFoundError) => HttpOps.notFound(opinionNotFoundError)
         }
@@ -85,10 +83,10 @@ class OpinionController(opinionService: OpinionService[DBIO])(implicit ec: Execu
     }
   }
 
-  def deleteOpinion: Route = path(v1 / PLACES / LongNumber / OPINIONS / JavaUUID) { (_: Long, opinionUUID: UUID) =>
+  def deleteOpinion: Route = path(v1 / PLACES / LongNumber / OPINIONS / LongNumber) { (_: Long, opinionId: Long) =>
     authorizedDelete(UserRole.User) { userInfo: UserInfo =>
       complete {
-        opinionService.deleteOpinion(userInfo, opinionUUID.toString).value.unsafeRun map {
+        opinionService.deleteOpinion(userInfo, opinionId).value.unsafeRun map {
           case Right(true) => HttpOps.ok("Opinion deleted")
           case Right(false) => HttpOps.internalServerError("Something went wrong")
           case Left(opinionError) => opinionError match {
@@ -100,11 +98,11 @@ class OpinionController(opinionService: OpinionService[DBIO])(implicit ec: Execu
     }
   }
 
-  def updateOpinion: Route = path(v1 / PLACES / LongNumber / OPINIONS / JavaUUID) { (_: Long, opinionUUID: UUID) =>
+  def updateOpinion: Route = path(v1 / PLACES / LongNumber / OPINIONS / LongNumber) { (_: Long, opinionId: Long) =>
     authorizedPut(UserRole.User) { userInfo: UserInfo =>
       entity(as[UpdateOpinionModel]) { updateOpinionModel =>
         complete {
-          opinionService.updateOpinion(userInfo, opinionUUID.toString, updateOpinionModel).value.unsafeRun map {
+          opinionService.updateOpinion(userInfo, opinionId, updateOpinionModel).value.unsafeRun map {
             case Right(opinion) => HttpOps.ok(opinion)
             case Left(opinionValidationError) => opinionValidationError match {
               case opinionNotFoundError: OpinionNotFoundError.type => HttpOps.notFound(opinionNotFoundError)
@@ -116,11 +114,11 @@ class OpinionController(opinionService: OpinionService[DBIO])(implicit ec: Execu
     }
   }
 
-  def reportOpinion: Route = path(v1 / PLACES / LongNumber / OPINIONS / JavaUUID / REPORTS) { (_: Long, opinionUUID: UUID) =>
+  def reportOpinion: Route = path(v1 / PLACES / LongNumber / OPINIONS / LongNumber / REPORTS) { (_: Long, opinionId: Long) =>
     authorizedPost(UserRole.User) { userInfo: UserInfo =>
       entity(as[ReportOpinionModel]) { reportOpinionModel =>
         complete {
-          opinionService.reportOpinion(userInfo, opinionUUID.toString, reportOpinionModel).value.unsafeRun map {
+          opinionService.reportOpinion(userInfo, opinionId, reportOpinionModel).value.unsafeRun map {
             case Right(true) => HttpOps.ok("Opinion reported")
             case Left(opinionNotFoundError) => HttpOps.badRequest(opinionNotFoundError)
           }
@@ -129,11 +127,11 @@ class OpinionController(opinionService: OpinionService[DBIO])(implicit ec: Execu
     }
   }
 
-  def updateOpinionStatus: Route = path(v1 / PLACES / LongNumber / OPINIONS / JavaUUID / "status") { (_: Long, opinionUUID: UUID) =>
+  def updateOpinionStatus: Route = path(v1 / PLACES / LongNumber / OPINIONS / LongNumber / "status") { (_: Long, opinionId: Long) =>
     authorizedPut(UserRole.Admin) { userInfo: UserInfo =>
       entity(as[UpdateOpinionStatusModel]) { updateOpinionStatusModel =>
         complete {
-          opinionService.updateOpinionStatus(userInfo, opinionUUID.toString, updateOpinionStatusModel).value.unsafeRun map {
+          opinionService.updateOpinionStatus(userInfo, opinionId, updateOpinionStatusModel).value.unsafeRun map {
             case Right(opinion) => HttpOps.ok(opinion)
             case Left(opinionNotFoundError) => HttpOps.badRequest(opinionNotFoundError)
           }
@@ -142,11 +140,11 @@ class OpinionController(opinionService: OpinionService[DBIO])(implicit ec: Execu
     }
   }
 
-  def updateOpinionLikes: Route = path(v1 / PLACES / LongNumber / OPINIONS / JavaUUID / "likes") { (_: Long, opinionUUID: UUID) =>
+  def updateOpinionLikes: Route = path(v1 / PLACES / LongNumber / OPINIONS / LongNumber / "likes") { (_: Long, opinionId: Long) =>
     authorizedPut(UserRole.User) { userInfo =>
       entity(as[UpdateOpinionLikesModel]) { upUpdateOpinionLikesModel =>
         complete {
-          opinionService.updateOpinionLikes(userInfo, opinionUUID.toString, upUpdateOpinionLikesModel).value.unsafeRun map {
+          opinionService.updateOpinionLikes(userInfo, opinionId, upUpdateOpinionLikesModel).value.unsafeRun map {
             case Right(opinion) => HttpOps.ok(opinion)
             case Left(opinionValidationError) => HttpOps.badRequest(opinionValidationError)
           }

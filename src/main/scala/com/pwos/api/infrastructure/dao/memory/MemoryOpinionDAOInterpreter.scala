@@ -12,11 +12,11 @@ class MemoryOpinionDAOInterpreter extends OpinionDAOAlgebra[Id] {
 
   override def create(opinion: Opinion): Id[Opinion] = ???
 
-  override def get(uuid: String): Id[Option[Opinion]] = ???
+  override def get(opinionId: Long): Id[Option[Opinion]] = ???
 
   override def update(opinion: Opinion): Id[Option[Opinion]] = ???
 
-  override def markDeleted(uuid: String): Id[Boolean] = ???
+  override def markDeleted(opinionId: Long): Id[Boolean] = ???
 
   override def listForPlace(placeId: Long, pagingRequest: PagingRequest): Id[PaginatedResult[Opinion]] = ???
 

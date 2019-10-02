@@ -6,9 +6,9 @@ import com.pwos.api.domain.HelloMountainsError
 
 
 class OpinionValidationInterpreter[F[_] : Monad](opinionDAO: OpinionDAOAlgebra[F]) extends OpinionValidationAlgebra[F] {
-  override def exists(opinionUUID: String): EitherT[F, HelloMountainsError.OpinionNotFoundError.type, Unit] = ???
+  override def exists(opinionId: Long): EitherT[F, HelloMountainsError.OpinionNotFoundError.type, Unit] = ???
 
-  override def validateOwnership(userId: Long, opinionUUID: String): EitherT[F, HelloMountainsError.OpinionOwnershipError.type, Unit] = ???
+  override def validateOwnership(userId: Long, opinionId: Long): EitherT[F, HelloMountainsError.OpinionOwnershipError.type, Unit] = ???
 }
 
 

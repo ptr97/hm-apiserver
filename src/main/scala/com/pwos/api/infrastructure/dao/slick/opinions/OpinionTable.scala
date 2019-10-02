@@ -11,7 +11,6 @@ import scala.language.postfixOps
 
 
 case class OpinionDTO(
-  uuid: String,
   placeId: Long,
   authorId: Long,
   body: Option[String],
@@ -25,7 +24,6 @@ case class OpinionDTO(
   def toOpinion(tags: List[HmTag], likes: List[String]): Opinion = {
     Opinion(
       id = id,
-      uuid = uuid,
       placeId = placeId,
       authorId = authorId,
       body = body,
@@ -43,7 +41,6 @@ case class OpinionDTO(
 object OpinionDTO {
   def fromOpinion(opinion: Opinion): OpinionDTO = {
     OpinionDTO(
-      uuid = opinion.uuid,
       placeId = opinion.placeId,
       authorId = opinion.authorId,
       body = opinion.body,
@@ -61,7 +58,6 @@ object OpinionDTO {
 class OpinionTable(tag: Tag) extends Table[OpinionDTO](tag, "OPINION") {
 
   def id: Rep[Long]                   = column[Long]("ID", O.PrimaryKey, O.AutoInc)
-  def uuid: Rep[String]               = column[String]("UUID")
   def placeId: Rep[Long]              = column[Long]("PLACE_ID")
   def authorId: Rep[Long]             = column[Long]("AUTHOR_ID")
   def body: Rep[Option[String]]       = column[Option[String]]("BODY")
@@ -73,7 +69,6 @@ class OpinionTable(tag: Tag) extends Table[OpinionDTO](tag, "OPINION") {
 
 
   override def * : ProvenShape[OpinionDTO] = (
-    uuid,
     placeId,
     authorId,
     body,

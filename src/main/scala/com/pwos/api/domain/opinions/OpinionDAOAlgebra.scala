@@ -9,11 +9,11 @@ trait OpinionDAOAlgebra[F[_]] {
 
   def create(opinion: Opinion): F[Opinion]
 
-  def get(uuid: String): F[Option[Opinion]]
+  def get(opinionId: Long): F[Option[Opinion]]
 
   def update(opinion: Opinion): F[Option[Opinion]]
 
-  def markDeleted(uuid: String): F[Boolean]
+  def markDeleted(opinionId: Long): F[Boolean]
 
   def listForPlace(placeId: Long, pagingRequest: PagingRequest): F[PaginatedResult[Opinion]]
 
