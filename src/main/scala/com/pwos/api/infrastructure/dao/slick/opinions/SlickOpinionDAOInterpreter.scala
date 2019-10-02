@@ -22,95 +22,25 @@ class SlickOpinionDAOInterpreter(implicit ec: ExecutionContext) extends OpinionD
   private val opinionLikes: TableQuery[OpinionLikeTable] = TableQuery[OpinionLikeTable]
   private val users: TableQuery[UserTable] = TableQuery[UserTable]
 
+  override def create(opinion: Opinion): DBIO[Opinion] = ???
 
-  override def create(opinion: Opinion): DBIO[Opinion] = {
-    val opinionDTO: OpinionDTO = OpinionDTO.fromOpinion(opinion)
-    val tagsIds: List[Long] = opinion.tags.flatMap(_.id)
+  override def addTags(opinionId: Long, tagsIds: List[Long]): DBIO[Boolean] = ???
 
-    val newOpinionId: DBIO[Long] = opinions returning opinions.map(_.id) += opinionDTO
+  override def removeTags(opinionId: Long): DBIO[Boolean] = ???
 
-    newOpinionId flatMap { opinionId =>
-      val opinionTags: List[OpinionTag] = tagsIds.map { tagId => OpinionTag(opinionId, tagId) }
-      val insertOpinionTagsResult: DBIO[Option[Int]] = opinionsTags ++= opinionTags
-      insertOpinionTagsResult map { _ =>
-        opinion
-      }
-    }
+  override def addLike(opinionId: Long, userId: Long): DBIO[Boolean] = ???
 
-  }
+  override def removeLike(opinionId: Long, userId: Long): DBIO[Boolean] = ???
 
-  override def get(opinionId: Long): DBIO[Option[Opinion]] = {
+  override def get(opinionId: Long): DBIO[Option[(Opinion, List[String], List[Long])]] = ???
 
-    //    val opinionsWithLeftJoinTags: Query[(OpinionTable, Rep[Option[OpinionTagTable]]), (OpinionDTO, Option[OpinionTag]), Seq] = opinions
-    ////      .filter(_.deleted === false)
-    ////      .filter(_.blocked === false)
-    //      .filter(_.uuid === uuid)
-    //      .joinLeft(opinionsTags)
-    //      .on(_.id === _.opinionId)
-    //
-    //    val opinionsWithLikesJoin: Query[((OpinionTable, jdbc.MySQLProfile.api.Rep[Option[OpinionTagTable]]), Rep[Option[OpinionLikeTable]]), ((OpinionDTO, Option[OpinionTag]), Option[OpinionLike]), Seq] = opinionsWithLeftJoinTags
-    //      .joinLeft(opinionLikes)
-    //      .on(_._1.id === _.opinionId)
-    //
-    //    val res: FixedSqlStreamingAction[Seq[(OpinionDTO, Option[OpinionTag])], (OpinionDTO, Option[OpinionTag]), Effect.Read] = opinionsWithLeftJoinTags.result
-    //
-    //    val t: DBIOAction[(Option[OpinionDTO], Seq[OpinionTag]), NoStream, Effect.Read] = res.map { seq: Seq[(OpinionDTO, Option[OpinionTag])] =>
-    //      val tags: Seq[OpinionTag] = seq.flatMap(_._2)
-    //      val maybeOpinion: Option[OpinionDTO] = seq.map(_._1).headOption
-    //
-    //      maybeOpinion -> tags
-    //    }
-    //
-    ////    t map { tuple =>
-    ////      tuple._1.map { opinionDTO =>
-    ////        opinionDTO.toOpinion(tuple._2.toList, List.empty)
-    ////      }
-    ////    }
+  override def update(opinion: Opinion): DBIO[Boolean] = ???
 
-    // # 2
+  override def markDeleted(opinionId: Long): DBIO[Boolean] = ???
 
+  override def listForPlace(placeId: Long, pagingRequest: PagingRequest): DBIO[PaginatedResult[(Opinion, List[String], List[Long])]] = ???
 
-
-    // # 3
-    for {
-      maybeOpinionDTO <- opinions.filter(_.id === opinionId).result.headOption
-      opinionTagsIds: List[Long] <- maybeOpinionDTO map { opinionDTO =>
-        opinionsTags.filter(_.opinionId === opinionDTO.id).map(_.tagId).result.map(_.toList)
-      } getOrElse {
-        DBIO.successful(List.empty)
-      }
-      tags <- tags.filter(_.id inSet opinionTagsIds).result.map(_.toList)
-      likesIds: List[Long] <- maybeOpinionDTO map { opinionDTO =>
-        opinionLikes.filter(_.opinionId === opinionDTO.id).map(_.userId).result.map(_.toList)
-      } getOrElse {
-        DBIO.successful(List.empty)
-      }
-      likes: List[String] <- users.filter(_.id inSet likesIds).map(_.username).result.map(_.toList)
-    } yield {
-      maybeOpinionDTO map { opinionDTO =>
-        opinionDTO.toOpinion(tags, likes)
-      }
-    }
-  }
-
-  override def update(opinion: Opinion): DBIO[Option[Opinion]] = {
-    opinions
-      .filter(_.id === opinion.id)
-
-    ???
-  }
-
-  override def markDeleted(opinionId: Long): DBIO[Boolean] = {
-    opinions
-      .filter(_.id === opinionId)
-      .map(_.deleted)
-      .update(true)
-      .map(_ > 0)
-  }
-
-  override def listForPlace(placeId: Long, pagingRequest: PagingRequest): DBIO[PaginatedResult[Opinion]] = ???
-
-  override def listAll(queryParameters: QueryParameters, pagingRequest: PagingRequest): DBIO[PaginatedResult[Opinion]] = ???
+  override def listAll(queryParameters: QueryParameters, pagingRequest: PagingRequest): DBIO[PaginatedResult[(Opinion, List[String], List[Long])]] = ???
 }
 
 object SlickOpinionDAOInterpreter {

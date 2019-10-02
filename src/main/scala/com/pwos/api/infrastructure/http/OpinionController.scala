@@ -26,21 +26,32 @@ class OpinionController(opinionService: OpinionService[DBIO])(implicit ec: Execu
   import PlaceController.PLACES
 
 
-  def listAllOpinions: Route = path(v1 / PLACES / OPINIONS) {
-    authorizedGet(UserRole.Admin) { _ =>
+  def listAllOpinions: Route = path(v1 / OPINIONS) {
+    authorizedGet(UserRole.Admin) { userInfo: UserInfo =>
       pagingParameters { (queryParameters, pagingRequest) =>
         complete {
-          opinionService.list(None, queryParameters, pagingRequest).unsafeRun map (HttpOps.ok(_))
+          opinionService.list(userInfo, maybePlaceId = None, queryParameters, pagingRequest).unsafeRun map (HttpOps.ok(_))
         }
       }
     }
   }
 
-  def getOpinionReports: Route = path(v1 / PLACES / OPINIONS / LongNumber / REPORTS) { opinionId: Long =>
-    authorizedGet(UserRole.Admin) { _ =>
+  def getOpinion: Route = path(v1 / OPINIONS / LongNumber) { opinionId: Long =>
+    authorizedGet(UserRole.Admin) { userInfo: UserInfo =>
+      complete {
+        opinionService.getOpinionView(userInfo, opinionId).value.unsafeRun map {
+          case Right(opinionView) => HttpOps.ok(opinionView)
+          case Left(opinionNotFoundError) => HttpOps.notFound(opinionNotFoundError)
+        }
+      }
+    }
+  }
+
+  def getOpinionReports: Route = path(v1 / OPINIONS / LongNumber / REPORTS) { opinionId: Long =>
+    authorizedGet(UserRole.Admin) { userInfo: UserInfo =>
       pagingParameters { (queryParameters, pagingRequest) =>
         complete {
-          opinionService.reports(opinionId, queryParameters, pagingRequest).value.unsafeRun map {
+          opinionService.reports(userInfo, opinionId, queryParameters, pagingRequest).value.unsafeRun map {
             case Right(reports) => HttpOps.ok(reports)
             case Left(opinionNotFoundError) => HttpOps.badRequest(opinionNotFoundError)
           }
@@ -50,10 +61,10 @@ class OpinionController(opinionService: OpinionService[DBIO])(implicit ec: Execu
   }
 
   def listOpinionsForPlace: Route = path(v1 / PLACES / LongNumber / OPINIONS) { placeId: Long =>
-    authorizedGet(UserRole.User) { _ =>
+    authorizedGet(UserRole.User) { userInfo: UserInfo =>
       pagingParameters { (queryParameters, pagingRequest) =>
         complete {
-          opinionService.list(Some(placeId), queryParameters, pagingRequest).unsafeRun map (HttpOps.ok(_))
+          opinionService.list(userInfo, Some(placeId), queryParameters, pagingRequest).unsafeRun map (HttpOps.ok(_))
         }
       }
     }
@@ -64,20 +75,10 @@ class OpinionController(opinionService: OpinionService[DBIO])(implicit ec: Execu
       entity(as[CreateOpinionModel]) { createOpinionModel: CreateOpinionModel =>
         complete {
           opinionService.addOpinion(userInfo, placeId, createOpinionModel).value.unsafeRun map {
-            case Right(opinion) => HttpOps.created(opinion)
+            case Right(true) => HttpOps.created("Opinion created")
+            case Right(false) => HttpOps.internalServerError("Something went wrong")
             case Left(placeNotFoundError) => HttpOps.badRequest(placeNotFoundError)
           }
-        }
-      }
-    }
-  }
-
-  def getOpinion: Route = path(v1 / OPINIONS / LongNumber) { opinionId: Long =>
-    authorizedGet(UserRole.User) { _ =>
-      complete {
-        opinionService.getOpinion(opinionId).value.unsafeRun map {
-          case Right(opinion) => HttpOps.created(opinion)
-          case Left(opinionNotFoundError) => HttpOps.notFound(opinionNotFoundError)
         }
       }
     }
@@ -140,7 +141,7 @@ class OpinionController(opinionService: OpinionService[DBIO])(implicit ec: Execu
     }
   }
 
-  def updateOpinionLikes: Route = path(v1 / PLACES / LongNumber / OPINIONS / LongNumber / "likes") { (_: Long, opinionId: Long) =>
+  def updateOpinionLikes: Route = path(v1 / OPINIONS / LongNumber / "likes") { opinionId: Long =>
     authorizedPut(UserRole.User) { userInfo =>
       entity(as[UpdateOpinionLikesModel]) { upUpdateOpinionLikesModel =>
         complete {

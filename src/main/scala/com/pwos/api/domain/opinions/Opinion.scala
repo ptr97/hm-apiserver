@@ -1,8 +1,6 @@
 package com.pwos.api.domain.opinions
 
-import com.pwos.api.domain.opinions.OpinionModels.CreateOpinionModel
 import com.pwos.api.domain.opinions.reports.ReportCategory
-import com.pwos.api.domain.opinions.tags.Tag
 import org.joda.time.DateTime
 
 
@@ -10,8 +8,6 @@ case class Opinion(
   placeId: Long,
   authorId: Long,
   body: Option[String],
-  tags: List[Tag],
-  likes: List[String] = List.empty,
   referenceDate: DateTime = DateTime.now,
   lastModified: DateTime = DateTime.now,
   creationDate: DateTime = DateTime.now,
@@ -21,12 +17,13 @@ case class Opinion(
 )
 
 object Opinion {
+  import OpinionModels.CreateOpinionModel
+
   def fromCreateOpinionModel(placeId: Long, userId: Long, createOpinionModel: CreateOpinionModel): Opinion = {
     Opinion(
       placeId = placeId,
       authorId = userId,
       body = createOpinionModel.body,
-      tags = createOpinionModel.tags,
       referenceDate = createOpinionModel.referenceDate.getOrElse(DateTime.now())
     )
   }
@@ -35,16 +32,46 @@ object Opinion {
 
 object OpinionModels {
 
+  case class OpinionView(
+    opinion: Opinion,
+    tags: List[String],
+    likes: OpinionLikes
+  )
+
+  object OpinionView {
+
+    def withoutLikes(opinion: Opinion, tagsNames: List[String]): OpinionView = {
+      OpinionView(opinion, tagsNames, OpinionLikes.empty)
+    }
+
+  }
+
+  case class OpinionLikes(
+    likesCount: Int,
+    likedByYou: Boolean
+  )
+
+  object OpinionLikes {
+
+    def empty: OpinionLikes = {
+      OpinionLikes(0, likedByYou = false)
+    }
+
+    def fromListOfIds(userId: Long, usersIds: List[Long]): OpinionLikes = {
+      OpinionLikes(usersIds.length, usersIds.contains(userId))
+    }
+
+  }
+
   case class CreateOpinionModel(
     body: Option[String],
-    tags: List[Tag],
-    creationDate: DateTime = DateTime.now,
+    tagsIds: List[Long],
     referenceDate: Option[DateTime]
   )
 
   case class UpdateOpinionModel(
     body: Option[String] = None,
-    tags: Option[List[Tag]] = None,
+    tagsIds: Option[List[Long]] = None,
     referenceDate: Option[DateTime] = None
   )
 

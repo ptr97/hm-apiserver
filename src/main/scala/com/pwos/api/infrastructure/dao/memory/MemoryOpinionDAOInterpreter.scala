@@ -9,18 +9,25 @@ import com.pwos.api.domain.opinions.OpinionDAOAlgebra
 
 
 class MemoryOpinionDAOInterpreter extends OpinionDAOAlgebra[Id] {
-
   override def create(opinion: Opinion): Id[Opinion] = ???
 
-  override def get(opinionId: Long): Id[Option[Opinion]] = ???
+  override def addTags(opinionId: Long, tagsIds: List[Long]): Id[Boolean] = ???
 
-  override def update(opinion: Opinion): Id[Option[Opinion]] = ???
+  override def removeTags(opinionId: Long): Id[Boolean] = ???
+
+  override def addLike(opinionId: Long, userId: Long): Id[Boolean] = ???
+
+  override def removeLike(opinionId: Long, userId: Long): Id[Boolean] = ???
+
+  override def get(opinionId: Long): Id[Option[(Opinion, List[String], List[Long])]] = ???
+
+  override def update(opinion: Opinion): Id[Boolean] = ???
 
   override def markDeleted(opinionId: Long): Id[Boolean] = ???
 
-  override def listForPlace(placeId: Long, pagingRequest: PagingRequest): Id[PaginatedResult[Opinion]] = ???
+  override def listForPlace(placeId: Long, pagingRequest: PagingRequest): Id[PaginatedResult[(Opinion, List[String], List[Long])]] = ???
 
-  override def listAll(queryParameters: QueryParameters, pagingRequest: PagingRequest): Id[PaginatedResult[Opinion]] = ???
+  override def listAll(queryParameters: QueryParameters, pagingRequest: PagingRequest): Id[PaginatedResult[(Opinion, List[String], List[Long])]] = ???
 }
 
 object MemoryOpinionDAOInterpreter {

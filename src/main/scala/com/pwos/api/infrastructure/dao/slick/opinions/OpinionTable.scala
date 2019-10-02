@@ -2,7 +2,6 @@ package com.pwos.api.infrastructure.dao.slick.opinions
 
 import com.github.tototoshi.slick.MySQLJodaSupport._
 import com.pwos.api.domain.opinions.Opinion
-import com.pwos.api.domain.opinions.tags.{Tag => HmTag}
 import org.joda.time.DateTime
 import slick.jdbc.MySQLProfile.api._
 import slick.lifted.ProvenShape
@@ -10,52 +9,7 @@ import slick.lifted.ProvenShape
 import scala.language.postfixOps
 
 
-case class OpinionDTO(
-  placeId: Long,
-  authorId: Long,
-  body: Option[String],
-  referenceDate: DateTime,
-  lastModified: DateTime,
-  creationDate: DateTime = DateTime.now,
-  blocked: Boolean = false,
-  deleted: Boolean = false,
-  id: Option[Long] = None
-) {
-  def toOpinion(tags: List[HmTag], likes: List[String]): Opinion = {
-    Opinion(
-      id = id,
-      placeId = placeId,
-      authorId = authorId,
-      body = body,
-      tags = tags,
-      likes = likes,
-      referenceDate = referenceDate,
-      lastModified = lastModified,
-      creationDate = creationDate,
-      blocked = blocked,
-      deleted = deleted
-    )
-  }
-}
-
-object OpinionDTO {
-  def fromOpinion(opinion: Opinion): OpinionDTO = {
-    OpinionDTO(
-      placeId = opinion.placeId,
-      authorId = opinion.authorId,
-      body = opinion.body,
-      referenceDate = opinion.referenceDate,
-      lastModified = opinion.lastModified,
-      creationDate = opinion.creationDate,
-      blocked = opinion.blocked,
-      deleted = opinion.deleted,
-      id = opinion.id
-    )
-  }
-}
-
-
-class OpinionTable(tag: Tag) extends Table[OpinionDTO](tag, "OPINION") {
+class OpinionTable(tag: Tag) extends Table[Opinion](tag, "OPINION") {
 
   def id: Rep[Long]                   = column[Long]("ID", O.PrimaryKey, O.AutoInc)
   def placeId: Rep[Long]              = column[Long]("PLACE_ID")
@@ -68,7 +22,7 @@ class OpinionTable(tag: Tag) extends Table[OpinionDTO](tag, "OPINION") {
   def deleted: Rep[Boolean]           = column[Boolean]("DELETED")
 
 
-  override def * : ProvenShape[OpinionDTO] = (
+  override def * : ProvenShape[Opinion] = (
     placeId,
     authorId,
     body,
@@ -78,5 +32,5 @@ class OpinionTable(tag: Tag) extends Table[OpinionDTO](tag, "OPINION") {
     blocked,
     deleted,
     id.?,
-  ) <> (OpinionDTO.apply _ tupled, OpinionDTO.unapply)
+  ) <> (Opinion.apply _ tupled, Opinion.unapply)
 }
