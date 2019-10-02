@@ -41,12 +41,10 @@ CREATE TABLE OPINION (
 
 CREATE TABLE TAG (
     ID bigint(20) NOT NULL AUTO_INCREMENT,
-    UUID char(36) COLLATE utf8mb4_unicode_ci NOT NULL,
     NAME varchar(80) NOT NULL,
     ENABLED boolean DEFAULT true,
     TAG_CATEGORY enum('subsoil', 'equipment', 'threats') NOT NULL,
-    PRIMARY KEY (ID),
-    UNIQUE KEY (UUID)
+    PRIMARY KEY (ID)
 );
 
 CREATE TABLE OPINION_TAG (
