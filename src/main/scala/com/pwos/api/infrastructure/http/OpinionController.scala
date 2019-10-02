@@ -72,7 +72,7 @@ class OpinionController(opinionService: OpinionService[DBIO])(implicit ec: Execu
     }
   }
 
-  def getOpinion: Route = path(v1 / PLACES / LongNumber / OPINIONS / LongNumber) { (_, opinionId: Long) =>
+  def getOpinion: Route = path(v1 / OPINIONS / LongNumber) { opinionId: Long =>
     authorizedGet(UserRole.User) { _ =>
       complete {
         opinionService.getOpinion(opinionId).value.unsafeRun map {
@@ -83,7 +83,7 @@ class OpinionController(opinionService: OpinionService[DBIO])(implicit ec: Execu
     }
   }
 
-  def deleteOpinion: Route = path(v1 / PLACES / LongNumber / OPINIONS / LongNumber) { (_: Long, opinionId: Long) =>
+  def deleteOpinion: Route = path(v1 / OPINIONS / LongNumber) { opinionId: Long =>
     authorizedDelete(UserRole.User) { userInfo: UserInfo =>
       complete {
         opinionService.deleteOpinion(userInfo, opinionId).value.unsafeRun map {
@@ -98,7 +98,7 @@ class OpinionController(opinionService: OpinionService[DBIO])(implicit ec: Execu
     }
   }
 
-  def updateOpinion: Route = path(v1 / PLACES / LongNumber / OPINIONS / LongNumber) { (_: Long, opinionId: Long) =>
+  def updateOpinion: Route = path(v1 / OPINIONS / LongNumber) { opinionId: Long =>
     authorizedPut(UserRole.User) { userInfo: UserInfo =>
       entity(as[UpdateOpinionModel]) { updateOpinionModel =>
         complete {
@@ -114,7 +114,7 @@ class OpinionController(opinionService: OpinionService[DBIO])(implicit ec: Execu
     }
   }
 
-  def reportOpinion: Route = path(v1 / PLACES / LongNumber / OPINIONS / LongNumber / REPORTS) { (_: Long, opinionId: Long) =>
+  def reportOpinion: Route = path(v1 / OPINIONS / LongNumber / REPORTS) { opinionId: Long =>
     authorizedPost(UserRole.User) { userInfo: UserInfo =>
       entity(as[ReportOpinionModel]) { reportOpinionModel =>
         complete {
@@ -127,7 +127,7 @@ class OpinionController(opinionService: OpinionService[DBIO])(implicit ec: Execu
     }
   }
 
-  def updateOpinionStatus: Route = path(v1 / PLACES / LongNumber / OPINIONS / LongNumber / "status") { (_: Long, opinionId: Long) =>
+  def updateOpinionStatus: Route = path(v1 / OPINIONS / LongNumber / "status") { opinionId: Long =>
     authorizedPut(UserRole.Admin) { userInfo: UserInfo =>
       entity(as[UpdateOpinionStatusModel]) { updateOpinionStatusModel =>
         complete {
