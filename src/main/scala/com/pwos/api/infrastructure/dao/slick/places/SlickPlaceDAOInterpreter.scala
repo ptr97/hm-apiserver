@@ -1,5 +1,6 @@
 package com.pwos.api.infrastructure.dao.slick.places
 
+import cats.implicits._
 import com.pwos.api.domain.places.Place
 import com.pwos.api.domain.places.PlaceDAOAlgebra
 import slick.dbio.DBIO
@@ -14,10 +15,8 @@ final class SlickPlaceDAOInterpreter(implicit ec: ExecutionContext) extends Plac
   private val places: TableQuery[PlaceTable] = TableQuery[PlaceTable]
 
   override def create(place: Place): DBIO[Place] = {
-    val newPlaceId: DBIO[Long] = places returning places.map(_.id) += place
-    newPlaceId.flatMap { id =>
-      places.filter(_.id === id).result.head
-    }
+    places returning places
+      .map(_.id) into((place, id) => place.copy(id = id.some)) += place
   }
 
   override def get(id: Long): DBIO[Option[Place]] = {
@@ -26,7 +25,7 @@ final class SlickPlaceDAOInterpreter(implicit ec: ExecutionContext) extends Plac
 
   override def update(place: Place): DBIO[Option[Place]] = {
     places.filter(_.id === place.id).update(place).map { count =>
-      if (count > 0) Some(place) else None
+      if (count > 0) place.some else None
     }
   }
 

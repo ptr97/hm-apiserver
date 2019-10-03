@@ -37,8 +37,8 @@ class UserValidationInterpreter[F[_] : Monad](userDAO: UserDAOAlgebra[F]) extend
   }
 
   override def doesNotExist(maybeUserName: Option[String], maybeEmail: Option[String]): F[ValidatedNel[UserValidationError, Unit]] = {
-    val validateUserNameF: F[ValidatedNel[UserValidationError, Unit]] = maybeUserName.map(validateUserNameUniques).getOrElse(implicitly[Monad[F]].pure(Valid(Unit)))
-    val validateEmailF: F[ValidatedNel[UserValidationError, Unit]] = maybeEmail.map(validateEmailUniques).getOrElse(implicitly[Monad[F]].pure(Valid(Unit)))
+    val validateUserNameF: F[ValidatedNel[UserValidationError, Unit]] = maybeUserName.map(validateUserNameUniques).getOrElse(Monad[F].pure(Valid(Unit)))
+    val validateEmailF: F[ValidatedNel[UserValidationError, Unit]] = maybeEmail.map(validateEmailUniques).getOrElse(Monad[F].pure(Valid(Unit)))
 
     validateUserNameF flatMap { validUserName =>
       validateEmailF map { validEmail =>

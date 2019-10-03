@@ -1,5 +1,6 @@
 package com.pwos.api.infrastructure.dao.slick.users
 
+import cats.implicits._
 import com.pwos.api.PaginatedResult
 import com.pwos.api.domain.PagingRequest
 import com.pwos.api.domain.QueryParameters
@@ -17,10 +18,8 @@ final class SlickUserDAOInterpreter(implicit ec: ExecutionContext) extends UserD
   val users: TableQuery[UserTable] = TableQuery[UserTable]
 
   override def create(user: User): DBIO[User] = {
-    val newUserId: DBIO[Long] = users returning users.map(_.id) += user
-    newUserId.flatMap { id =>
-      users.filter(_.id === id).result.head
-    }
+    users returning users
+      .map(_.id) into((user, id) => user.copy(id = id.some)) += user
   }
 
   override def get(id: Long): DBIO[Option[User]] = {

@@ -22,7 +22,7 @@ class UserService[F[_] : Monad](userDAO: UserDAOAlgebra[F], userValidation: User
       User(userName = createUserModel.userName, email = createUserModel.email, password = hashedPassword)
     }
 
-    EitherT(implicitly[Monad[F]].pure(userValidation.validateUserCreationModel(createUserModel).toEither)) flatMap { _ =>
+    EitherT(Monad[F].pure(userValidation.validateUserCreationModel(createUserModel).toEither)) flatMap { _ =>
       EitherT(userValidation.doesNotExist(createUserModel.userName, createUserModel.email).map(_.toEither)) flatMap { _ =>
         val userF: F[User] = userDAO.create(userWithHashedPassword)
         EitherT.fromOptionF(userF.map(_.toView), NonEmptyList.of(UserNotFoundError))
@@ -61,7 +61,7 @@ class UserService[F[_] : Monad](userDAO: UserDAOAlgebra[F], userValidation: User
       updates.foldLeft(oldUser)((user, updateFun) => updateFun(user).getOrElse(user))
     }
 
-    EitherT(implicitly[Monad[F]].pure(userValidation.validateUserUpdateModel(updateUserCredentialsModel).toEither)) flatMap { _ =>
+    EitherT(Monad[F].pure(userValidation.validateUserUpdateModel(updateUserCredentialsModel).toEither)) flatMap { _ =>
       EitherT(userValidation.doesNotExist(updateUserCredentialsModel.userName, updateUserCredentialsModel.email).map(_.toEither)) flatMap { _ =>
         userValidation.exists(Option(id)).leftMap(NonEmptyList.of(_)) flatMap { _ =>
           EitherT.fromOptionF(userDAO.get(id), NonEmptyList.of(UserNotFoundError)) flatMap { user: User =>
@@ -88,7 +88,7 @@ class UserService[F[_] : Monad](userDAO: UserDAOAlgebra[F], userValidation: User
       user.copy(password = hashedPassword)
     }
 
-    EitherT(implicitly[Monad[F]].pure(userValidation.validateChangePasswordModel(changePasswordModel).toEither)) flatMap { _ =>
+    EitherT(Monad[F].pure(userValidation.validateChangePasswordModel(changePasswordModel).toEither)) flatMap { _ =>
       userValidation.exists(Option(id)).leftMap(err => NonEmptyList.of(err)) flatMap { _ =>
         EitherT.fromOptionF(userDAO.get(id), NonEmptyList.of(UserNotFoundError)) flatMap { user: User =>
           validatePassword(changePasswordModel.oldPassword, user.password).leftMap(NonEmptyList.of(_)) flatMap { _ =>
