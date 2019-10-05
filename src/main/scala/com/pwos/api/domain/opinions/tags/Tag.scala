@@ -11,7 +11,6 @@ object TagCategory extends Enumeration {
 
 
 case class Tag(
-  uuid: String,
   name: String,
   enabled: Boolean,
   tagCategory: TagCategory.Value,
