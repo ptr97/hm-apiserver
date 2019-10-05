@@ -31,9 +31,9 @@ libraryDependencies ++= Seq(
   "com.typesafe.slick"      %%  "slick-hikaricp"        % slickVersion,
   "mysql"                   %   "mysql-connector-java"  % mySqlConnectorVersion,
   "org.slf4j"               %   "slf4j-simple"          % slf4jVersion,
-  "com.github.tototoshi"    %% "slick-joda-mapper"      % slickJodaMapperVersion,
-  "joda-time"               % "joda-time"               % jodaTimeVersion,
-  "org.joda"                % "joda-convert"            % jodaConvertVersion,
+  "com.github.tototoshi"    %%  "slick-joda-mapper"     % slickJodaMapperVersion,
+  "joda-time"               %   "joda-time"             % jodaTimeVersion,
+  "org.joda"                %   "joda-convert"          % jodaConvertVersion,
 
   "com.github.pureconfig"   %%  "pureconfig"            % pureConfigVersion,
 
