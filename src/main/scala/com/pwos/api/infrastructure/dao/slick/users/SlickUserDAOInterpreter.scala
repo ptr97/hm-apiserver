@@ -7,6 +7,7 @@ import com.pwos.api.domain.QueryParameters
 import com.pwos.api.domain.users.User
 import com.pwos.api.domain.users.UserDAOAlgebra
 import com.pwos.api.domain.users.UserRole
+import com.pwos.api.infrastructure.dao.slick.SlickImplicits._
 import slick.dbio.DBIO
 import slick.jdbc.MySQLProfile.api._
 import slick.lifted.TableQuery
@@ -94,23 +95,12 @@ final class SlickUserDAOInterpreter(implicit ec: ExecutionContext) extends UserD
       case (_, _) => usersWithFilter.sortBy(_.id.asc)
     }
 
-    val withOffset: Query[UserTable, User, Seq] = sortedUsers.drop(pagingRequest.offset)
-    val withLimit: Query[UserTable, User, Seq] = pagingRequest.maybePageSize.map { pageSize =>
-      withOffset.take(pageSize)
-    } getOrElse withOffset
-
     val allUsersCount: DBIO[Int] = users.length.result
 
     for {
-      users <- withLimit.result
+      usersResult <- sortedUsers.paged(pagingRequest).result
       totalCount <- allUsersCount
-    } yield {
-      PaginatedResult(
-        totalCount = totalCount,
-        items = users.toList,
-        hasNextPage = totalCount > pagingRequest.offset + users.length
-      )
-    }
+    } yield PaginatedResult.build(usersResult.toList, totalCount, pagingRequest)
   }
 
 }
