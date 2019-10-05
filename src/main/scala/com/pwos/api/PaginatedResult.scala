@@ -1,5 +1,7 @@
 package com.pwos.api
 
+import com.pwos.api.domain.PagingRequest
+
 import scala.collection.GenTraversableOnce
 
 
@@ -13,4 +15,14 @@ case class PaginatedResult[T](totalCount: Int, items: List[T], hasNextPage: Bool
     this.copy(items = items.flatMap(f))
   }
 
+}
+
+object PaginatedResult {
+  def build[T](items: List[T], totalCount: Int, pagingRequest: PagingRequest): PaginatedResult[T] = {
+    PaginatedResult(
+      totalCount = totalCount,
+      items = items,
+      hasNextPage = totalCount > pagingRequest.offset + items.length
+    )
+  }
 }
