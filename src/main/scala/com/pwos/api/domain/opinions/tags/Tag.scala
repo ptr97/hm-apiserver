@@ -12,7 +12,7 @@ object TagCategory extends Enumeration {
 
 case class Tag(
   name: String,
-  enabled: Boolean,
   tagCategory: TagCategory.Value,
-  id: Option[Long]
+  enabled: Boolean = true,
+  id: Option[Long] = None
 )

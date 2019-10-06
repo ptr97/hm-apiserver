@@ -40,13 +40,14 @@ class OpinionService[F[_] : Monad](
     }
   }
 
-  def addOpinion(userInfo: UserInfo, placeId: Long, createOpinionModel: CreateOpinionModel): EitherT[F, PlaceNotFoundError.type, Boolean] = {
+  def addOpinion(userInfo: UserInfo, placeId: Long, createOpinionModel: CreateOpinionModel): EitherT[F, PlaceNotFoundError.type, OpinionView] = {
     for {
       _ <- placeValidation.exists(placeId)
       opinion = Opinion.fromCreateOpinionModel(placeId, userInfo.id, createOpinionModel)
       newOpinion <- EitherT.liftF(opinionDAO.create(opinion))
-      addTagsResult <- EitherT.liftF(opinionDAO.addTags(newOpinion.id.get, createOpinionModel.tagsIds))
-    } yield addTagsResult
+      _ <- EitherT.liftF(opinionDAO.addTags(newOpinion.id.get, createOpinionModel.tagsIds))
+      opinionView <- EitherT.liftF(getOpinionView(userInfo, newOpinion.id.get).toOption.value.map(_.get))
+    } yield opinionView
   }
 
   def getOpinionView(userInfo: UserInfo, opinionId: Long): EitherT[F, OpinionNotFoundError.type, OpinionView] = {

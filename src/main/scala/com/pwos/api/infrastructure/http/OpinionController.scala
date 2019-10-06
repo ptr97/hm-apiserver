@@ -73,8 +73,7 @@ class OpinionController(opinionService: OpinionService[DBIO])(implicit ec: Execu
       entity(as[CreateOpinionModel]) { createOpinionModel: CreateOpinionModel =>
         complete {
           opinionService.addOpinion(userInfo, placeId, createOpinionModel).value.unsafeRun map {
-            case Right(true) => HttpOps.created("Opinion created")
-            case Right(false) => HttpOps.internalServerError("Something went wrong")
+            case Right(opinionView) => HttpOps.created(opinionView)
             case Left(placeNotFoundError) => HttpOps.badRequest(placeNotFoundError)
           }
         }

@@ -19,7 +19,7 @@ case class Report(
   body: Option[String],
   reportCategory: ReportCategory.ReportCategory,
   creationDate: DateTime = DateTime.now,
-  id: Option[Long]
+  id: Option[Long] = None
 )
 
 object Report {

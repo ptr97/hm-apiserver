@@ -12,15 +12,21 @@ import com.pwos.api.infrastructure.dao.slick.opinions.OpinionLike
 import com.pwos.api.infrastructure.dao.slick.opinions.OpinionTag
 
 
-class MemoryOpinionDAOInterpreter extends OpinionDAOAlgebra[Id] {
+class MemoryOpinionDAOInterpreter(tags: List[Tag]) extends OpinionDAOAlgebra[Id] {
 
   private var opinions: List[Opinion] = List.empty
   private var opinionIdAutoIncrement: Long = 1
 
   private var opinionsTags: List[OpinionTag] = List.empty
-  private var tags: List[Tag] = List.empty
   private var opinionsLikes: List[OpinionLike] = List.empty
 
+  def getLastOpinionId: Long = opinionIdAutoIncrement
+
+  private def safeOpinions: List[Opinion] = {
+    this.opinions.filter { o =>
+      o.deleted === false && o.blocked === false
+    }
+  }
 
   override def create(opinion: Opinion): Id[Opinion] = {
     val opinionWithId: Opinion = opinion.copy(id = Some(opinionIdAutoIncrement))
@@ -56,7 +62,7 @@ class MemoryOpinionDAOInterpreter extends OpinionDAOAlgebra[Id] {
   }
 
   override def get(opinionId: Long): Id[Option[(Opinion, List[String], List[Long])]] = {
-    val maybeOpinion: Option[Opinion] = this.opinions.find(_.id === opinionId.some)
+    val maybeOpinion: Option[Opinion] = safeOpinions.find(_.id === opinionId.some)
     val tagsIds: List[Long] = this.opinionsTags.filter(_.opinionId === opinionId).map(_.tagId)
     val tagsNames: List[String] = this.tags.filter(tag => tagsIds.contains(tag.id.get)).map(_.name)
 
@@ -69,7 +75,7 @@ class MemoryOpinionDAOInterpreter extends OpinionDAOAlgebra[Id] {
 
   override def update(opinion: Opinion): Id[Boolean] = {
     val updatedOpinion: Option[Opinion] = for {
-      found <- this.opinions.find(_.id === opinion.id)
+      found <- safeOpinions.find(_.id === opinion.id)
       newList = opinion :: this.opinions.filterNot(_.id === found.id)
       _ = this.opinions = newList
       updated <- this.opinions.find(_.id === opinion.id)
@@ -87,13 +93,13 @@ class MemoryOpinionDAOInterpreter extends OpinionDAOAlgebra[Id] {
   }
 
   override def listForPlace(placeId: Long, pagingRequest: PagingRequest): Id[PaginatedResult[(Opinion, List[String], List[Long])]] = {
-    val opinionsList: List[Opinion] = this.opinions.filter(_.placeId === placeId)
+    val opinionsList: List[Opinion] = safeOpinions.filter(_.placeId === placeId)
 
     val items: List[(Opinion, List[String], List[Long])] = opinionsList map { opinion =>
       val tagsIds: List[Long] = this.opinionsTags.filter(_.opinionId === opinion.id.get).map(_.tagId)
       val tagsNames: List[String] = this.tags.filter(tag => tagsIds.contains(tag.id.get)).map(_.name)
 
-      val likesUserIds = this.opinionsLikes.filter(_.opinionId == opinion.id.get).map(_.userId)
+      val likesUserIds: List[Long] = this.opinionsLikes.filter(_.opinionId == opinion.id.get).map(_.userId)
 
       (opinion, tagsNames, likesUserIds)
     }
@@ -103,11 +109,11 @@ class MemoryOpinionDAOInterpreter extends OpinionDAOAlgebra[Id] {
 
   override def listAll(queryParameters: QueryParameters, pagingRequest: PagingRequest): Id[PaginatedResult[(Opinion, List[String], List[Long])]] = {
 
-    val items: List[(Opinion, List[String], List[Long])] = this.opinions map { opinion =>
+    val items: List[(Opinion, List[String], List[Long])] = safeOpinions map { opinion =>
       val tagsIds: List[Long] = this.opinionsTags.filter(_.opinionId === opinion.id.get).map(_.tagId)
       val tagsNames: List[String] = this.tags.filter(tag => tagsIds.contains(tag.id.get)).map(_.name)
 
-      val likesUserIds = this.opinionsLikes.filter(_.opinionId == opinion.id.get).map(_.userId)
+      val likesUserIds: List[Long] = this.opinionsLikes.filter(_.opinionId == opinion.id.get).map(_.userId)
 
       (opinion, tagsNames, likesUserIds)
     }
@@ -118,6 +124,7 @@ class MemoryOpinionDAOInterpreter extends OpinionDAOAlgebra[Id] {
 }
 
 object MemoryOpinionDAOInterpreter {
-  def apply(): MemoryOpinionDAOInterpreter =
-    new MemoryOpinionDAOInterpreter()
+  // TODO: Remove tags dependency
+  def apply(tags: List[Tag]): MemoryOpinionDAOInterpreter =
+    new MemoryOpinionDAOInterpreter(tags)
 }

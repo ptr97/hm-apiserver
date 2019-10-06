@@ -34,4 +34,17 @@ object UserModels {
 
 case class UserInfo(id: Long, userName: String, email: String, role: UserRole.Value, banned: Boolean, deleted: Boolean)
 
+object UserInfo {
+  def forUser(user: User): UserInfo = {
+    UserInfo(
+      id = user.id.get,
+      userName = user.userName,
+      email = user.email,
+      role = user.role,
+      banned = user.banned,
+      deleted = user.deleted
+    )
+  }
+}
+
 case class UserView(id: Long, userName: String, email: String)

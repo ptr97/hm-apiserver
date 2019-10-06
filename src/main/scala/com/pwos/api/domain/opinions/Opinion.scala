@@ -66,7 +66,7 @@ object OpinionModels {
   case class CreateOpinionModel(
     body: Option[String],
     tagsIds: List[Long],
-    referenceDate: Option[DateTime]
+    referenceDate: Option[DateTime] = Some(DateTime.now)
   )
 
   case class UpdateOpinionModel(
