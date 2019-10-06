@@ -60,8 +60,7 @@ object Server {
 
   private def authRoutes(implicit ec: ExecutionContext, database: Database): Route = {
     lazy val userDAO: SlickUserDAOInterpreter = SlickUserDAOInterpreter(ec)
-    lazy val userValidation: UserValidationInterpreter[DBIO] = UserValidationInterpreter[DBIO](userDAO)
-    lazy val authService: AuthService[DBIO] = AuthService(userDAO, userValidation)
+    lazy val authService: AuthService[DBIO] = AuthService(userDAO)
     lazy val authController: AuthController = AuthController(authService)
 
     authController.authRoutes

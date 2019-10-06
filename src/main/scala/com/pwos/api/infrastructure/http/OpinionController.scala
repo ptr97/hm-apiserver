@@ -49,12 +49,10 @@ class OpinionController(opinionService: OpinionService[DBIO])(implicit ec: Execu
 
   def getOpinionReports: Route = path(v1 / OPINIONS / LongNumber / REPORTS) { opinionId: Long =>
     authorizedGet(UserRole.Admin) { userInfo: UserInfo =>
-      pagingParameters { (queryParameters, pagingRequest) =>
-        complete {
-          opinionService.reports(userInfo, opinionId, queryParameters, pagingRequest).value.unsafeRun map {
-            case Right(reports) => HttpOps.ok(reports)
-            case Left(opinionNotFoundError) => HttpOps.badRequest(opinionNotFoundError)
-          }
+      complete {
+        opinionService.reports(userInfo, opinionId).value.unsafeRun map {
+          case Right(reports) => HttpOps.ok(reports)
+          case Left(opinionNotFoundError) => HttpOps.badRequest(opinionNotFoundError)
         }
       }
     }

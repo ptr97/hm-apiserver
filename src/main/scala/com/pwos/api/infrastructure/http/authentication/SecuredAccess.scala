@@ -8,7 +8,6 @@ import com.pwos.api.domain.authentication.AuthService
 import com.pwos.api.domain.users.User
 import com.pwos.api.domain.users.UserInfo
 import com.pwos.api.domain.users.UserRole
-import com.pwos.api.domain.users.UserValidationInterpreter
 import com.pwos.api.infrastructure.dao.slick.DBIOMonad._
 import com.pwos.api.infrastructure.dao.slick.users.SlickUserDAOInterpreter
 import com.pwos.api.infrastructure.implicits._
@@ -83,8 +82,7 @@ abstract class SecuredAccess(implicit ec: ExecutionContext, database: Database) 
 
   private def getAuthService(implicit ec: ExecutionContext): AuthService[DBIO] = {
     lazy val userDAOInterpreter = SlickUserDAOInterpreter(ec)
-    lazy val userValidationInterpreter = UserValidationInterpreter[DBIO](userDAOInterpreter)
-    lazy val authService = AuthService(userDAOInterpreter, userValidationInterpreter)
+    lazy val authService = AuthService(userDAOInterpreter)
     authService
   }
 

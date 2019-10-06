@@ -6,7 +6,6 @@ import com.pwos.api.domain.places.Place
 import com.pwos.api.domain.places.PlaceService
 import com.pwos.api.domain.places.PlaceUpdateModel
 import com.pwos.api.domain.users.UserRole
-import com.pwos.api.infrastructure.dao.slick.DBIOMonad._
 import com.pwos.api.infrastructure.http.authentication.SecuredAccess
 import com.pwos.api.infrastructure.http.versions._
 import com.pwos.api.infrastructure.implicits._

@@ -16,7 +16,6 @@ import slick.dbio.DBIO
 import slick.jdbc.MySQLProfile.api._
 
 import scala.concurrent.ExecutionContext
-import scala.language.postfixOps
 
 
 class UserController(userService: UserService[DBIO])(implicit ec: ExecutionContext, database: Database) extends SecuredAccess {

@@ -8,12 +8,11 @@ import com.pwos.api.domain.authentication.PasswordService.Password
 import com.pwos.api.domain.users.User
 import com.pwos.api.domain.users.UserDAOAlgebra
 import com.pwos.api.domain.users.UserModels.LoginModel
-import com.pwos.api.domain.users.UserValidationAlgebra
 import com.pwos.api.infrastructure.http.authentication.JsonWebToken
 import com.pwos.api.infrastructure.http.authentication.JwtAuth
 
 
-class AuthService[F[_]](userDAO: UserDAOAlgebra[F], userValidation: UserValidationAlgebra[F]) {
+class AuthService[F[_]](userDAO: UserDAOAlgebra[F]) {
 
   def get(id: Long)(implicit F: Functor[F]): EitherT[F, UserNotFoundError.type, User] = {
     EitherT.fromOptionF(userDAO.get(id), UserNotFoundError)
@@ -40,12 +39,9 @@ class AuthService[F[_]](userDAO: UserDAOAlgebra[F], userValidation: UserValidati
     } yield token
   }
 
-
-//  def refreshToken() = ???
-
 }
 
 object AuthService {
-  def apply[F[_]](userDAO: UserDAOAlgebra[F], userValidation: UserValidationAlgebra[F]): AuthService[F] =
-    new AuthService(userDAO, userValidation)
+  def apply[F[_]](userDAO: UserDAOAlgebra[F]): AuthService[F] =
+    new AuthService(userDAO)
 }

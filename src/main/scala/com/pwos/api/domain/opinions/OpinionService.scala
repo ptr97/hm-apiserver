@@ -148,7 +148,7 @@ class OpinionService[F[_] : Monad](
     } yield updatedOpinionOpinionLikesResult
   }
 
-  def reports(userInfo: UserInfo, opinionId: Long, queryParameters: QueryParameters, pagingRequest: PagingRequest): EitherT[F, OpinionNotFoundError.type, PaginatedResult[ReportView]] = {
+  def reports(userInfo: UserInfo, opinionId: Long): EitherT[F, OpinionNotFoundError.type, List[ReportView]] = {
 
     def collectReportAuthors(reports: List[Report]): F[Map[Long, User]] = {
       val authorsIds: List[Long] = reports.map(_.authorId)
@@ -172,10 +172,10 @@ class OpinionService[F[_] : Monad](
     for {
       _ <- opinionValidation.exists(opinionId)
       opinion <- getOpinionView(userInfo, opinionId).map(_.opinion)
-      reportsPaginated <- EitherT.liftF(reportDAO.list(opinion.id.get))
-      reportAuthors <- EitherT.liftF(collectReportAuthors(reportsPaginated.items))
-      reportViews = buildReportViews(reportsPaginated.items, reportAuthors)
-    } yield reportsPaginated.copy(items = reportViews)
+      reports <- EitherT.liftF(reportDAO.list(opinion.id.get))
+      reportAuthors <- EitherT.liftF(collectReportAuthors(reports))
+      reportViews = buildReportViews(reports, reportAuthors)
+    } yield reportViews
   }
 
 }

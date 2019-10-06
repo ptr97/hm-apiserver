@@ -1,6 +1,5 @@
 package com.pwos.api.domain.places
 
-import cats.Functor
 import cats.Monad
 import cats.data.EitherT
 import cats.data.IdT
@@ -14,7 +13,7 @@ class PlaceService[F[_] : Monad](placeDAO: PlaceDAOAlgebra[F], placeValidation: 
     newPlace <- EitherT.liftF(placeDAO.create(place))
   } yield newPlace
 
-  def get(id: Long)(implicit F: Functor[F]): EitherT[F, PlaceNotFoundError.type, Place] =
+  def get(id: Long): EitherT[F, PlaceNotFoundError.type, Place] =
     EitherT.fromOptionF(placeDAO.get(id), PlaceNotFoundError)
 
   def update(id: Long, placeUpdateModel: PlaceUpdateModel): EitherT[F, PlaceNotFoundError.type, Place] = {

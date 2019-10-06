@@ -13,13 +13,13 @@ class MemoryUserDAOInterpreter extends UserDAOAlgebra[Id] {
 
   private var users: List[User] = List.empty
 
-  private var userId: Long = 1
+  private var userIdAutoIncrement: Long = 1
 
-  def getLastId: Long = userId
+  def getLastId: Long = userIdAutoIncrement
 
   override def create(user: User): Id[User] = {
-    val userWithId: User = user.copy(id = Some(userId))
-    this.userId += 1
+    val userWithId: User = user.copy(id = Some(userIdAutoIncrement))
+    this.userIdAutoIncrement += 1
     this.users = userWithId :: this.users
     userWithId
   }
@@ -66,14 +66,7 @@ class MemoryUserDAOInterpreter extends UserDAOAlgebra[Id] {
       withOffset.take(pageSize)
     } getOrElse withOffset
 
-    val totalCount: Int = users.length
-    val hasNextPage: Boolean = totalCount > pagingRequest.offset + withLimit.length
-
-    PaginatedResult(
-      totalCount = totalCount,
-      items = withLimit,
-      hasNextPage = hasNextPage
-    )
+    PaginatedResult.build(withLimit, users.length, pagingRequest)
   }
 }
 
