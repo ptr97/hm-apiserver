@@ -44,9 +44,7 @@ class UserService[F[_] : Monad](userDAO: UserDAOAlgebra[F], userValidation: User
   }
 
   def list(queryParameters: QueryParameters, pagingRequest: PagingRequest): F[PaginatedResult[UserView]] = {
-    userDAO.list(queryParameters, pagingRequest).map { a: PaginatedResult[User] =>
-      a.flatMapResult(_.toView)
-    }
+    userDAO.list(queryParameters, pagingRequest).map(_.flatMapResult(_.toView))
   }
 
   def updateCredentials(id: Long, updateUserCredentialsModel: UpdateUserCredentialsModel): EitherT[F, NonEmptyList[UserValidationError], UserView] = {
