@@ -23,7 +23,7 @@ import scala.concurrent.ExecutionContext
 class OpinionController(opinionService: OpinionService[DBIO])(implicit ec: ExecutionContext, database: Database) extends SecuredAccess {
 
   val opinionRoutes: Route = listAllOpinions ~ getOpinion ~ getOpinionReports ~ listOpinionsForPlace ~ addOpinion ~
-    deleteOpinion ~ updateOpinion ~ reportOpinion ~ updateOpinionStatus ~ updateOpinionLikes
+    deleteOpinion ~ updateOpinion ~ reportCategories ~ reportOpinion ~ updateOpinionStatus ~ updateOpinionLikes
 
   import OpinionController._
   import PlaceController.PLACES
@@ -114,12 +114,21 @@ class OpinionController(opinionService: OpinionService[DBIO])(implicit ec: Execu
     }
   }
 
+  def reportCategories: Route = path(v1 / REPORTS) {
+    authorizedGet(UserRole.User) { _ =>
+      complete {
+        opinionService.reportCategories().unsafeRun map (HttpOps.ok(_))
+      }
+    }
+  }
+
   def reportOpinion: Route = path(v1 / OPINIONS / LongNumber / REPORTS) { opinionId: Long =>
     authorizedPost(UserRole.User) { userInfo: UserInfo =>
       entity(as[ReportOpinionModel]) { reportOpinionModel =>
         complete {
           opinionService.reportOpinion(userInfo, opinionId, reportOpinionModel).value.unsafeRun map {
             case Right(true) => HttpOps.ok("Opinion reported")
+            case Right(false) => HttpOps.internalServerError("Something went wrong")
             case Left(opinionNotFoundError) => HttpOps.badRequest(opinionNotFoundError)
           }
         }

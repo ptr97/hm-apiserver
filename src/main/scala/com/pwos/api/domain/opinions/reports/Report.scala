@@ -10,6 +10,8 @@ object ReportCategory extends Enumeration {
   val MISLEADING: ReportCategory = Value("misleading")
   val VULGAR: ReportCategory = Value("vulgar")
   val FAULTY: ReportCategory = Value("faulty")
+
+  def all: List[ReportCategory.ReportCategory] = List(MISLEADING, VULGAR, FAULTY)
 }
 
 

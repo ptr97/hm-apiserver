@@ -10,6 +10,7 @@ import com.pwos.api.domain.PagingRequest
 import com.pwos.api.domain.QueryParameters
 import com.pwos.api.domain.opinions.OpinionModels._
 import com.pwos.api.domain.opinions.reports.Report
+import com.pwos.api.domain.opinions.reports.ReportCategory
 import com.pwos.api.domain.opinions.reports.ReportDAOAlgebra
 import com.pwos.api.domain.opinions.reports.ReportView
 import com.pwos.api.domain.places.PlaceValidationAlgebra
@@ -105,6 +106,10 @@ class OpinionService[F[_] : Monad](
       updateOpinionResult <- EitherT.liftF(opinionDAO.update(updatedOpinion))
       updateTagsResult <- EitherT.liftF(updateTags)
     } yield updateOpinionResult && updateTagsResult
+  }
+
+  def reportCategories(): F[List[ReportCategory.ReportCategory]] = {
+    Monad[F].pure(ReportCategory.all)
   }
 
   def reportOpinion(userInfo: UserInfo, opinionId: Long, reportOpinionModel: ReportOpinionModel): EitherT[F, OpinionValidationError, Boolean] = {

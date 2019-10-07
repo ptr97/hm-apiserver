@@ -15,7 +15,6 @@ import slick.dbio.DBIO
 import slick.jdbc.MySQLProfile.api._
 
 import scala.concurrent.ExecutionContext
-import scala.language.postfixOps
 
 
 class PlaceController(placeService: PlaceService[DBIO])(implicit ec: ExecutionContext, database: Database) extends SecuredAccess {
