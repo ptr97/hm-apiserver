@@ -25,10 +25,8 @@ class OpinionController(opinionService: OpinionService[DBIO])(implicit ec: Execu
   val opinionRoutes: Route = listAllOpinions ~ getOpinion ~ getOpinionReports ~ listOpinionsForPlace ~ addOpinion ~
     deleteOpinion ~ updateOpinion ~ reportOpinion ~ updateOpinionStatus ~ updateOpinionLikes
 
-
   import OpinionController._
   import PlaceController.PLACES
-
 
   def listAllOpinions: Route = path(v1 / OPINIONS) {
     authorizedGet(UserRole.Admin) { userInfo: UserInfo =>
