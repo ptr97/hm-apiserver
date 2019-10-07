@@ -7,14 +7,20 @@ import akka.http.scaladsl.server.Route
 import akka.stream.ActorMaterializer
 import com.pwos.api.config.Config
 import com.pwos.api.domain.authentication.AuthService
+import com.pwos.api.domain.opinions.OpinionService
+import com.pwos.api.domain.opinions.OpinionValidationAlgebra
+import com.pwos.api.domain.opinions.OpinionValidationInterpreter
 import com.pwos.api.domain.places.PlaceService
 import com.pwos.api.domain.places.PlaceValidationInterpreter
 import com.pwos.api.domain.users.UserService
 import com.pwos.api.domain.users.UserValidationInterpreter
 import com.pwos.api.infrastructure.dao.slick.DBIOMonad._
+import com.pwos.api.infrastructure.dao.slick.opinions.SlickOpinionDAOInterpreter
+import com.pwos.api.infrastructure.dao.slick.opinions.reports.SlickReportDAOInterpreter
 import com.pwos.api.infrastructure.dao.slick.places.SlickPlaceDAOInterpreter
 import com.pwos.api.infrastructure.dao.slick.users.SlickUserDAOInterpreter
 import com.pwos.api.infrastructure.http.HttpOps
+import com.pwos.api.infrastructure.http.OpinionController
 import com.pwos.api.infrastructure.http.PlaceController
 import com.pwos.api.infrastructure.http.UserController
 import com.pwos.api.infrastructure.http.authentication.AuthController
@@ -54,7 +60,8 @@ object Server {
     HttpOps.withRequestLogging {
       authRoutes ~
       userRoutes ~
-      placeRoutes
+      placeRoutes ~
+      opinionRoutes
     }
   }
 
@@ -76,11 +83,24 @@ object Server {
   }
 
   private def placeRoutes(implicit ec: ExecutionContext, database: Database): Route = {
-    lazy val placeDAOInterpreter: SlickPlaceDAOInterpreter = SlickPlaceDAOInterpreter(ec)
-    lazy val placeValidationInterpreter: PlaceValidationInterpreter[DBIO] = PlaceValidationInterpreter[DBIO](placeDAOInterpreter)
-    lazy val placeService: PlaceService[DBIO] = PlaceService[DBIO](placeDAOInterpreter, placeValidationInterpreter)
+    lazy val placeDAO: SlickPlaceDAOInterpreter = SlickPlaceDAOInterpreter(ec)
+    lazy val placeValidation: PlaceValidationInterpreter[DBIO] = PlaceValidationInterpreter[DBIO](placeDAO)
+    lazy val placeService: PlaceService[DBIO] = PlaceService[DBIO](placeDAO, placeValidation)
     lazy val placeController: PlaceController = PlaceController(placeService)
 
     placeController.placeRoutes
+  }
+
+  private def opinionRoutes(implicit ec: ExecutionContext, database: Database): Route = {
+    lazy val opinionDAO: SlickOpinionDAOInterpreter = SlickOpinionDAOInterpreter(ec)
+    lazy val reportDAO: SlickReportDAOInterpreter = SlickReportDAOInterpreter(ec)
+    lazy val userDAO: SlickUserDAOInterpreter = SlickUserDAOInterpreter(ec)
+    lazy val placeDAO: SlickPlaceDAOInterpreter = SlickPlaceDAOInterpreter(ec)
+    lazy val opinionValidation: OpinionValidationAlgebra[DBIO] = OpinionValidationInterpreter[DBIO](opinionDAO)
+    lazy val placeValidation: PlaceValidationInterpreter[DBIO] = PlaceValidationInterpreter[DBIO](placeDAO)
+    lazy val opinionService: OpinionService[DBIO] = OpinionService[DBIO](opinionDAO, reportDAO, userDAO, opinionValidation, placeValidation)
+    lazy val opinionController: OpinionController = OpinionController(opinionService)
+
+    opinionController.opinionRoutes
   }
 }

@@ -24,3 +24,8 @@ class SlickReportDAOInterpreter(implicit ec: ExecutionContext) extends ReportDAO
   }
 
 }
+
+object SlickReportDAOInterpreter {
+  def apply(implicit ec: ExecutionContext): SlickReportDAOInterpreter =
+    new SlickReportDAOInterpreter()
+}

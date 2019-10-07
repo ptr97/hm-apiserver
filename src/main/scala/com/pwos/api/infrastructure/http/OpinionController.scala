@@ -22,6 +22,10 @@ import scala.concurrent.ExecutionContext
 
 class OpinionController(opinionService: OpinionService[DBIO])(implicit ec: ExecutionContext, database: Database) extends SecuredAccess {
 
+  val opinionRoutes: Route = listAllOpinions ~ getOpinion ~ getOpinionReports ~ listOpinionsForPlace ~ addOpinion ~
+    deleteOpinion ~ updateOpinion ~ reportOpinion ~ updateOpinionStatus ~ updateOpinionLikes
+
+
   import OpinionController._
   import PlaceController.PLACES
 
