@@ -325,8 +325,37 @@ class OpinionServiceSpec extends FunSpec with Matchers {
       result shouldBe Left(OpinionNotFoundError)
     }
 
-//    it("should not allow to report opinion more than once")
-//    it("should block opinion when it has 3 reports")
+    it("should not allow to report opinion more than once") {
+      val resources = OpinionServiceSpecResources()
+      val opinionFromDb: Id[Opinion] = resources.opinionDAO.create(opinionOne)
+      val opinionId: Long = opinionFromDb.id.get
+
+      val _: Id[Report] = resources.reportDAO.create(Report(
+        authorId = userKlayUserInfo.id,
+        opinionId = opinionId,
+        body = reportOpinionModel.body,
+        reportCategory = reportOpinionModel.reportCategory,
+        creationDate = resources.reportDAO.creationDateMock
+      ))
+
+      val result: Id[Either[OpinionNotFoundError.type, Boolean]] = resources.opinionService.reportOpinion(userKlayUserInfo, opinionId, reportOpinionModel).value
+
+      result shouldBe Left(OpinionAlreadyReportedError)
+    }
+
+    it("should block opinion when it has 3 reports") {
+      val resources = OpinionServiceSpecResources()
+      val opinionFromDb: Id[Opinion] = resources.opinionDAO.create(opinionOne)
+      val opinionId: Long = opinionFromDb.id.get
+
+      val reportByKlay: Id[Either[OpinionNotFoundError.type, Boolean]] = resources.opinionService.reportOpinion(userKlayUserInfo, opinionId, reportOpinionModel).value
+      val reportByKevin: Id[Either[OpinionNotFoundError.type, Boolean]] = resources.opinionService.reportOpinion(userKevinUserInfo, opinionId, reportOpinionModel).value
+      val resultBySteph: Id[Either[OpinionNotFoundError.type, Boolean]] = resources.opinionService.reportOpinion(userStephenUserInfo, opinionId, reportOpinionModel).value
+
+      val blockedOpinion: Opinion = resources.opinionDAO.get(opinionId).map(_._1).get
+
+      blockedOpinion shouldBe opinionFromDb.copy(blocked = true)
+    }
   }
 
   describe("Updating Opinion status") {
@@ -337,7 +366,7 @@ class OpinionServiceSpec extends FunSpec with Matchers {
       val opinionFromDb: Id[Opinion] = resources.opinionDAO.create(opinionOne)
       val opinionId: Long = opinionFromDb.id.get
 
-      val result: Id[Either[OpinionNotFoundError.type, Boolean]] = resources.opinionService.updateOpinionStatus(adminUserInfo, opinionId, updateStatusModel).value
+      val result: Id[Either[OpinionValidationError, Boolean]] = resources.opinionService.updateOpinionStatus(adminUserInfo, opinionId, updateStatusModel).value
 
       result shouldBe Right(true)
 
@@ -348,7 +377,7 @@ class OpinionServiceSpec extends FunSpec with Matchers {
     it("should return OpinionNotFoundError when Opinion does not exist") {
       val resources = OpinionServiceSpecResources()
       val notExistingOpinionId: Long = resources.opinionDAO.getLastOpinionId
-      val result: Id[Either[OpinionNotFoundError.type, Boolean]] = resources.opinionService.updateOpinionStatus(userStephenUserInfo, notExistingOpinionId, updateStatusModel).value
+      val result: Id[Either[OpinionValidationError, Boolean]] = resources.opinionService.updateOpinionStatus(userStephenUserInfo, notExistingOpinionId, updateStatusModel).value
 
       result shouldBe Left(OpinionNotFoundError)
     }

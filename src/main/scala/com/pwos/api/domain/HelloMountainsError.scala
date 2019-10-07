@@ -77,4 +77,8 @@ object HelloMountainsError {
     override def message: String = "You cannot unlike opinion which you do not like."
   }
 
+  case object OpinionAlreadyReportedError extends OpinionValidationError {
+    override def message: String = "You have already reported this Opinion."
+  }
+
 }
