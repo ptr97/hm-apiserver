@@ -348,9 +348,9 @@ class OpinionServiceSpec extends FunSpec with Matchers {
       val opinionFromDb: Id[Opinion] = resources.opinionDAO.create(opinionOne)
       val opinionId: Long = opinionFromDb.id.get
 
-      val _: Id[Either[OpinionValidationError, Boolean]] = resources.opinionService.reportOpinion(userKlayUserInfo, opinionId, reportOpinionModel).value
-      val _: Id[Either[OpinionValidationError, Boolean]] = resources.opinionService.reportOpinion(userKevinUserInfo, opinionId, reportOpinionModel).value
-      val _: Id[Either[OpinionValidationError, Boolean]] = resources.opinionService.reportOpinion(userStephenUserInfo, opinionId, reportOpinionModel).value
+      val reportByKlay: Id[Either[OpinionValidationError, Boolean]] = resources.opinionService.reportOpinion(userKlayUserInfo, opinionId, reportOpinionModel).value
+      val reportByKevin: Id[Either[OpinionValidationError, Boolean]] = resources.opinionService.reportOpinion(userKevinUserInfo, opinionId, reportOpinionModel).value
+      val resultBySteph: Id[Either[OpinionValidationError, Boolean]] = resources.opinionService.reportOpinion(userStephenUserInfo, opinionId, reportOpinionModel).value
 
       val blockedOpinionGetResult: Option[Opinion] = resources.opinionDAO.get(opinionId).map(_._1)
 
