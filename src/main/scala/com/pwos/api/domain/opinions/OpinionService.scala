@@ -107,13 +107,32 @@ class OpinionService[F[_] : Monad](
     } yield updateOpinionResult && updateTagsResult
   }
 
-  def reportOpinion(userInfo: UserInfo, opinionId: Long, reportOpinionModel: ReportOpinionModel): EitherT[F, OpinionNotFoundError.type, Boolean] = {
+  def reportOpinion(userInfo: UserInfo, opinionId: Long, reportOpinionModel: ReportOpinionModel): EitherT[F, OpinionValidationError, Boolean] = {
+    def validateReportUniqueness(reports: List[Report]): EitherT[F, OpinionAlreadyReportedError.type, Unit] = {
+      reports.map(_.authorId).find(_ === userInfo.id)
+        .map(_ => EitherT.leftT(OpinionAlreadyReportedError): EitherT[F, OpinionAlreadyReportedError.type, Unit])
+        .getOrElse(EitherT.liftF[F, OpinionAlreadyReportedError.type, Unit](Monad[F].pure(())))
+    }
+
+    val REPORTS_LIMIT: Int = 3
+
+    def blockOpinionWithThreeReports(reportsCount:Int, opinion: Opinion): F[Boolean] = {
+      if (reportsCount >= REPORTS_LIMIT) {
+        opinionDAO.update(opinion.copy(blocked = true))
+      } else {
+        Monad[F].pure(true)
+      }
+    }
+
     for {
       _ <- opinionValidation.exists(opinionId)
       opinion <- getOpinionView(userInfo, opinionId).map(_.opinion)
+      reports <- EitherT.liftF(reportDAO.list(opinionId))
+      _ <- validateReportUniqueness(reports)
       report = Report.fromReportOpinionModel(userInfo.id, opinion.id.get, reportOpinionModel)
       _ <- EitherT.liftF(reportDAO.create(report))
-    } yield true
+      result <- EitherT.liftF(blockOpinionWithThreeReports(reports.length + 1, opinion))
+    } yield result
   }
 
   def updateOpinionStatus(userInfo: UserInfo, opinionId: Long, updateOpinionStatusModel: UpdateOpinionStatusModel): EitherT[F, OpinionValidationError, Boolean] = {

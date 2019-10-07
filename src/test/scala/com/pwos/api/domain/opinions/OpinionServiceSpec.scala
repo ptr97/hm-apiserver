@@ -302,7 +302,7 @@ class OpinionServiceSpec extends FunSpec with Matchers {
       val opinionFromDb: Id[Opinion] = resources.opinionDAO.create(opinionOne)
       val opinionId: Long = opinionFromDb.id.get
 
-      val result: Id[Either[OpinionNotFoundError.type, Boolean]] = resources.opinionService.reportOpinion(userKlayUserInfo, opinionId, reportOpinionModel).value
+      val result: Id[Either[OpinionValidationError, Boolean]] = resources.opinionService.reportOpinion(userKlayUserInfo, opinionId, reportOpinionModel).value
 
       result shouldBe Right(true)
 
@@ -320,7 +320,7 @@ class OpinionServiceSpec extends FunSpec with Matchers {
     it("should return OpinionNotFoundError when Opinion does not exist") {
       val resources = OpinionServiceSpecResources()
       val notExistingOpinionId: Long = resources.opinionDAO.getLastOpinionId
-      val result: Id[Either[OpinionNotFoundError.type, Boolean]] = resources.opinionService.reportOpinion(userStephenUserInfo, notExistingOpinionId, reportOpinionModel).value
+      val result: Id[Either[OpinionValidationError, Boolean]] = resources.opinionService.reportOpinion(userStephenUserInfo, notExistingOpinionId, reportOpinionModel).value
 
       result shouldBe Left(OpinionNotFoundError)
     }
@@ -338,7 +338,7 @@ class OpinionServiceSpec extends FunSpec with Matchers {
         creationDate = resources.reportDAO.creationDateMock
       ))
 
-      val result: Id[Either[OpinionNotFoundError.type, Boolean]] = resources.opinionService.reportOpinion(userKlayUserInfo, opinionId, reportOpinionModel).value
+      val result: Id[Either[OpinionValidationError, Boolean]] = resources.opinionService.reportOpinion(userKlayUserInfo, opinionId, reportOpinionModel).value
 
       result shouldBe Left(OpinionAlreadyReportedError)
     }
@@ -348,13 +348,13 @@ class OpinionServiceSpec extends FunSpec with Matchers {
       val opinionFromDb: Id[Opinion] = resources.opinionDAO.create(opinionOne)
       val opinionId: Long = opinionFromDb.id.get
 
-      val reportByKlay: Id[Either[OpinionNotFoundError.type, Boolean]] = resources.opinionService.reportOpinion(userKlayUserInfo, opinionId, reportOpinionModel).value
-      val reportByKevin: Id[Either[OpinionNotFoundError.type, Boolean]] = resources.opinionService.reportOpinion(userKevinUserInfo, opinionId, reportOpinionModel).value
-      val resultBySteph: Id[Either[OpinionNotFoundError.type, Boolean]] = resources.opinionService.reportOpinion(userStephenUserInfo, opinionId, reportOpinionModel).value
+      val _: Id[Either[OpinionValidationError, Boolean]] = resources.opinionService.reportOpinion(userKlayUserInfo, opinionId, reportOpinionModel).value
+      val _: Id[Either[OpinionValidationError, Boolean]] = resources.opinionService.reportOpinion(userKevinUserInfo, opinionId, reportOpinionModel).value
+      val _: Id[Either[OpinionValidationError, Boolean]] = resources.opinionService.reportOpinion(userStephenUserInfo, opinionId, reportOpinionModel).value
 
-      val blockedOpinion: Opinion = resources.opinionDAO.get(opinionId).map(_._1).get
+      val blockedOpinionGetResult: Option[Opinion] = resources.opinionDAO.get(opinionId).map(_._1)
 
-      blockedOpinion shouldBe opinionFromDb.copy(blocked = true)
+      blockedOpinionGetResult shouldBe None
     }
   }
 
