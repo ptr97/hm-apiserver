@@ -116,7 +116,7 @@ class OpinionService[F[_] : Monad](
     } yield true
   }
 
-  def updateOpinionStatus(userInfo: UserInfo, opinionId: Long, updateOpinionStatusModel: UpdateOpinionStatusModel): EitherT[F, OpinionNotFoundError.type, Boolean] = {
+  def updateOpinionStatus(userInfo: UserInfo, opinionId: Long, updateOpinionStatusModel: UpdateOpinionStatusModel): EitherT[F, OpinionValidationError, Boolean] = {
     for {
       _ <- opinionValidation.exists(opinionId)
       opinion <- getOpinionView(userInfo, opinionId).map(_.opinion)
