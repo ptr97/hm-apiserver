@@ -2,7 +2,6 @@ package com.pwos.api.domain.places
 
 import cats.Monad
 import cats.data.EitherT
-import cats.data.IdT
 import com.pwos.api.domain.HelloMountainsError._
 
 
@@ -43,14 +42,8 @@ class PlaceService[F[_] : Monad](placeDAO: PlaceDAOAlgebra[F], placeValidation: 
     deletedPlace <- EitherT.liftF(placeDAO.delete(id))
   } yield deletedPlace
 
-  def list(pageSize: Option[Int], offset: Option[Int]): F[List[Place]] = {
-    val places: IdT[F, List[Place]] = for {
-      allPlaces <- IdT(placeDAO.all).map(_.sortBy(_.id))
-      withOffset = offset.map(off => allPlaces.drop(off)).getOrElse(allPlaces)
-      result = pageSize.map(size => withOffset.take(size)).getOrElse(withOffset)
-    } yield result
-
-    places.value
+  def list(): F[List[Place]] = {
+    placeDAO.all
   }
 }
 

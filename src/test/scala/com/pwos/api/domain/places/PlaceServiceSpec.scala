@@ -155,52 +155,16 @@ class PlaceServiceSpec extends FunSpec with Matchers {
       val p3: Id[Place] = placeDAO.create(thirdPlace)
       val p4: Id[Place] = placeDAO.create(fourthPlace)
 
-      val getAllPlacesResult: Id[List[Place]] = placeService.list(None, None)
+      val getAllPlacesResult: Id[List[Place]] = placeService.list()
 
       getAllPlacesResult shouldBe List(p1, p2, p3, p4)
     }
 
     it("should return empty list of places when there are not any places") {
       val (_, placeService) = getTestResources
-      val getAllPlacesResult: Id[List[Place]] = placeService.list(None, None)
+      val getAllPlacesResult: Id[List[Place]] = placeService.list()
 
       getAllPlacesResult shouldBe List.empty
-    }
-
-    it("should return list of places with proper page size") {
-      val (placeDAO, placeService) = getTestResources
-      val p1: Id[Place] = placeDAO.create(place)
-      val p2: Id[Place] = placeDAO.create(secondPlace)
-      val p3: Id[Place] = placeDAO.create(thirdPlace)
-      val p4: Id[Place] = placeDAO.create(fourthPlace)
-
-      val getAllPlacesResult: Id[List[Place]] = placeService.list(Some(2), None)
-
-      getAllPlacesResult shouldBe List(p1, p2)
-    }
-
-    it("should return list of places with proper offset") {
-      val (placeDAO, placeService) = getTestResources
-      val p1: Id[Place] = placeDAO.create(place)
-      val p2: Id[Place] = placeDAO.create(secondPlace)
-      val p3: Id[Place] = placeDAO.create(thirdPlace)
-      val p4: Id[Place] = placeDAO.create(fourthPlace)
-
-      val getAllPlacesResult: Id[List[Place]] = placeService.list(None, Some(2))
-
-      getAllPlacesResult shouldBe List(p3, p4)
-    }
-
-    it("should return list of places with proper page size and offset") {
-      val (placeDAO, placeService) = getTestResources
-      val p1: Id[Place] = placeDAO.create(place)
-      val p2: Id[Place] = placeDAO.create(secondPlace)
-      val p3: Id[Place] = placeDAO.create(thirdPlace)
-      val p4: Id[Place] = placeDAO.create(fourthPlace)
-
-      val getAllPlacesResult: Id[List[Place]] = placeService.list(Some(2), Some(1))
-
-      getAllPlacesResult shouldBe List(p2, p3)
     }
   }
 }

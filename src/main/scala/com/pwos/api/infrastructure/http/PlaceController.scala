@@ -76,16 +76,12 @@ class PlaceController(placeService: PlaceService[DBIO])(implicit ec: ExecutionCo
 
   def listPlaces: Route = path(v1 / PLACES) {
     authorizedGet(UserRole.User) { _ =>
-      parameters('page.as[Int] ?, 'pageSize.as[Int] ?, 'sortBy.as[String] ?, 'filterBy.as[String] ?, 'search.as[String] ?) {
-        (page, pageSize, sortBy, filterBy, search) =>
-          println(s"$page, $pageSize, $sortBy, $filterBy, $search")
-          complete {
-            val offset: Option[Int] = pageSize.flatMap(ps => page.map(p => ps * p))
-            placeService.list(pageSize, offset).unsafeRun map (HttpOps.ok(_))
-          }
+      complete {
+        placeService.list().unsafeRun map (HttpOps.ok(_))
       }
     }
   }
+
 }
 
 
