@@ -33,14 +33,6 @@ class AuthController(authService: AuthService[DBIO])(implicit ec: ExecutionConte
     }
   }
 
-//  def refreshToken: Route = path("refreshToken") {
-//    post {
-//      entity(as[String]) { refresh =>
-//        complete("refresh")
-//      }
-//    }
-//  }
-
 }
 
 object AuthController {
