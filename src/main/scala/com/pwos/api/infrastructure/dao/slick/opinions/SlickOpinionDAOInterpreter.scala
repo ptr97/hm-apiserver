@@ -123,9 +123,20 @@ class SlickOpinionDAOInterpreter(implicit ec: ExecutionContext) extends OpinionD
   override def listAll(queryParameters: QueryParameters, pagingRequest: PagingRequest): DBIO[PaginatedResult[(Opinion, List[String], List[Long])]] = {
     val opinionsWithJoinsQuery = opinionsWithJoins(None)
 
+    val onlyBlocked = queryParameters.filterBy flatMap { filters: Map[String, String] =>
+      filters.get("blocked") map {
+        case "true" => true
+        case _ => false
+      }
+    } getOrElse false
+
+    val filtered = opinionsWithJoinsQuery filter { case (opinion, _, _) =>
+      opinion.blocked === onlyBlocked
+    }
+
     for {
-      opinionsResult <- opinionsWithJoinsQuery.paged(pagingRequest).result.map(aggregateOpinions)
-      totalCount <- opinionsWithJoinsQuery.length.result
+      opinionsResult <- filtered.paged(pagingRequest).result.map(aggregateOpinions)
+      totalCount <- filtered.length.result
     } yield {
       PaginatedResult.build(opinionsResult, totalCount, pagingRequest)
     }
