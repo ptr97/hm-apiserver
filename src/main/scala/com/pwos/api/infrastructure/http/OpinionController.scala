@@ -32,7 +32,10 @@ class OpinionController(opinionService: OpinionService[DBIO])(implicit ec: Execu
     authorizedGet(UserRole.Admin) { userInfo: UserInfo =>
       pagingParameters { (queryParameters, pagingRequest) =>
         complete {
-          opinionService.list(userInfo, maybePlaceId = None, queryParameters, pagingRequest).unsafeRun map (HttpOps.ok(_))
+          opinionService.listAll(userInfo, queryParameters, pagingRequest).value.unsafeRun map {
+            case Right(opinions) => HttpOps.ok(opinions)
+            case Left(opinionPrivilegeError) => HttpOps.forbidden(opinionPrivilegeError)
+          }
         }
       }
     }
@@ -43,7 +46,10 @@ class OpinionController(opinionService: OpinionService[DBIO])(implicit ec: Execu
       complete {
         opinionService.getOpinionView(userInfo, opinionId).value.unsafeRun map {
           case Right(opinionView) => HttpOps.ok(opinionView)
-          case Left(opinionNotFoundError) => HttpOps.notFound(opinionNotFoundError)
+          case Left(opinionError) => opinionError match {
+            case opinionNotFoundError: OpinionNotFoundError.type => HttpOps.notFound(opinionNotFoundError)
+            case opinionPrivilegeError: OpinionPrivilegeError.type => HttpOps.forbidden(opinionPrivilegeError)
+          }
         }
       }
     }
@@ -54,7 +60,10 @@ class OpinionController(opinionService: OpinionService[DBIO])(implicit ec: Execu
       complete {
         opinionService.reports(userInfo, opinionId).value.unsafeRun map {
           case Right(reports) => HttpOps.ok(reports)
-          case Left(opinionNotFoundError) => HttpOps.badRequest(opinionNotFoundError)
+          case Left(opinionError) => opinionError match {
+            case opinionNotFoundError: OpinionNotFoundError.type => HttpOps.notFound(opinionNotFoundError)
+            case opinionPrivilegeError: OpinionPrivilegeError.type => HttpOps.forbidden(opinionPrivilegeError)
+          }
         }
       }
     }
@@ -62,9 +71,9 @@ class OpinionController(opinionService: OpinionService[DBIO])(implicit ec: Execu
 
   def listOpinionsForPlace: Route = path(v1 / PLACES / LongNumber / OPINIONS) { placeId: Long =>
     authorizedGet(UserRole.User) { userInfo: UserInfo =>
-      pagingParameters { (queryParameters, pagingRequest) =>
+      pagingParameters { (_, pagingRequest) =>
         complete {
-          opinionService.list(userInfo, Some(placeId), queryParameters, pagingRequest).unsafeRun map (HttpOps.ok(_))
+          opinionService.listForPlace(userInfo, placeId, pagingRequest).unsafeRun map (HttpOps.ok(_))
         }
       }
     }

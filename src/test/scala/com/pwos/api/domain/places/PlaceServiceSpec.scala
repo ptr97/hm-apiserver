@@ -157,7 +157,7 @@ class PlaceServiceSpec extends FunSpec with Matchers {
 
       val getAllPlacesResult: Id[List[Place]] = placeService.list()
 
-      getAllPlacesResult shouldBe List(p1, p2, p3, p4)
+      getAllPlacesResult shouldBe List(p4, p3, p2, p1)
     }
 
     it("should return empty list of places when there are not any places") {

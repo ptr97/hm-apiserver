@@ -8,6 +8,10 @@ object HelloMountainsError {
     def message: String
   }
 
+  sealed trait PrivilegeError extends HelloMountainsError {
+    override def message: String = "You do not have privileges to perform this action."
+  }
+
 
   sealed trait UserValidationError extends HelloMountainsError
 
@@ -47,6 +51,8 @@ object HelloMountainsError {
     override def message: String = s"User with email: $email already exists."
   }
 
+  case object UserPrivilegeError extends UserValidationError with PrivilegeError
+
 
   sealed trait PlaceValidationError extends HelloMountainsError
 
@@ -58,6 +64,8 @@ object HelloMountainsError {
     override def message: String = s"""Place with name ${place.name} already exists."""
   }
 
+  case object PlacePrivilegeError extends PlaceValidationError with PrivilegeError
+
 
   sealed trait OpinionValidationError extends HelloMountainsError
 
@@ -68,6 +76,9 @@ object HelloMountainsError {
   case object OpinionOwnershipError extends OpinionValidationError {
     override def message: String = "You cannot modify opinion which you do not own."
   }
+
+  case object OpinionPrivilegeError extends OpinionValidationError with PrivilegeError
+
 
   case object OpinionAlreadyLikedError extends OpinionValidationError {
     override def message: String = "You cannot like opinion twice."

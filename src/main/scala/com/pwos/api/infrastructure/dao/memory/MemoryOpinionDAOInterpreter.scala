@@ -22,10 +22,12 @@ class MemoryOpinionDAOInterpreter(tags: List[Tag]) extends OpinionDAOAlgebra[Id]
 
   def getLastOpinionId: Long = opinionIdAutoIncrement
 
-  private def safeOpinions: List[Opinion] = {
-    this.opinions.filter { o =>
-      o.deleted === false && o.blocked === false
-    }
+  private def notDeletedOpinions: List[Opinion] = {
+    this.opinions.filter(_.deleted === false)
+  }
+
+  private def activeOpinions: List[Opinion] = {
+    notDeletedOpinions.filter(_.blocked === false)
   }
 
   override def create(opinion: Opinion): Id[Opinion] = {
@@ -61,21 +63,40 @@ class MemoryOpinionDAOInterpreter(tags: List[Tag]) extends OpinionDAOAlgebra[Id]
     true
   }
 
-  override def get(opinionId: Long): Id[Option[(Opinion, List[String], List[Long])]] = {
-    val maybeOpinion: Option[Opinion] = safeOpinions.find(_.id === opinionId.some)
+  override def getOpinionView(opinionId: Long): Id[Option[(Opinion, List[String], List[Long])]] = {
+    getOpinion(opinionId, allowBlocked = true)
+  }
+
+  override def getActiveOpinionView(opinionId: Long): Id[Option[(Opinion, List[String], List[Long])]] = {
+    getOpinion(opinionId, allowBlocked = false)
+  }
+
+  override def getActiveOpinion(opinionId: Long): Id[Option[Opinion]] = {
+    activeOpinions.find(_.id === opinionId.some)
+  }
+
+  private def getOpinion(opinionId: Long, allowBlocked: Boolean): Id[Option[(Opinion, List[String], List[Long])]] = {
+    val opinionBaseSet: List[Opinion] = if (allowBlocked) {
+      notDeletedOpinions
+    } else {
+      activeOpinions
+    }
+
+    val maybeOpinion: Option[Opinion] = opinionBaseSet.find(_.id === opinionId.some)
     val tagsIds: List[Long] = this.opinionsTags.filter(_.opinionId === opinionId).map(_.tagId)
     val tagsNames: List[String] = this.tags.filter(tag => tagsIds.contains(tag.id.get)).map(_.name)
 
-    val likesUserIds = this.opinionsLikes.filter(_.opinionId == opinionId).map(_.userId)
+    val likesUserIds: List[Long] = this.opinionsLikes.filter(_.opinionId == opinionId).map(_.userId)
 
     maybeOpinion map { opinion =>
       (opinion, tagsNames, likesUserIds)
     }
+
   }
 
   override def update(opinion: Opinion): Id[Boolean] = {
     val updatedOpinion: Option[Opinion] = for {
-      found <- safeOpinions.find(_.id === opinion.id)
+      found <- activeOpinions.find(_.id === opinion.id)
       newList = opinion :: this.opinions.filterNot(_.id === found.id)
       _ = this.opinions = newList
       updated <- this.opinions.find(_.id === opinion.id)
@@ -86,14 +107,14 @@ class MemoryOpinionDAOInterpreter(tags: List[Tag]) extends OpinionDAOAlgebra[Id]
 
   override def markDeleted(opinionId: Long): Id[Boolean] = {
     (for {
-      found <- get(opinionId).map(_._1)
+      found <- getActiveOpinion(opinionId)
       deletedOpinion = found.copy(deleted = true)
       updateResult <- update(deletedOpinion).some
     } yield updateResult) getOrElse false
   }
 
   override def listForPlace(placeId: Long, pagingRequest: PagingRequest): Id[PaginatedResult[(Opinion, List[String], List[Long])]] = {
-    val opinionsList: List[Opinion] = safeOpinions.filter(_.placeId === placeId)
+    val opinionsList: List[Opinion] = activeOpinions.filter(_.placeId === placeId)
 
     val items: List[(Opinion, List[String], List[Long])] = opinionsList map { opinion =>
       val tagsIds: List[Long] = this.opinionsTags.filter(_.opinionId === opinion.id.get).map(_.tagId)
@@ -109,7 +130,9 @@ class MemoryOpinionDAOInterpreter(tags: List[Tag]) extends OpinionDAOAlgebra[Id]
 
   override def listAll(queryParameters: QueryParameters, pagingRequest: PagingRequest): Id[PaginatedResult[(Opinion, List[String], List[Long])]] = {
 
-    val items: List[(Opinion, List[String], List[Long])] = safeOpinions map { opinion =>
+    val filteredOpinions = notDeletedOpinions
+
+    val items: List[(Opinion, List[String], List[Long])] = filteredOpinions map { opinion =>
       val tagsIds: List[Long] = this.opinionsTags.filter(_.opinionId === opinion.id.get).map(_.tagId)
       val tagsNames: List[String] = this.tags.filter(tag => tagsIds.contains(tag.id.get)).map(_.name)
 

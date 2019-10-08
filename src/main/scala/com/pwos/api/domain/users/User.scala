@@ -32,7 +32,7 @@ object UserModels {
 
 }
 
-case class UserInfo(id: Long, userName: String, email: String, role: UserRole.Value, banned: Boolean, deleted: Boolean)
+case class UserInfo(id: Long, userName: String, email: String, role: UserRole.UserRole, banned: Boolean, deleted: Boolean)
 
 object UserInfo {
   def forUser(user: User): UserInfo = {

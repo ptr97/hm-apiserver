@@ -19,7 +19,11 @@ trait OpinionDAOAlgebra[F[_]] {
 
   def removeLike(opinionId: Long, userId: Long): F[Boolean]
 
-  def get(opinionId: Long): F[Option[OpinionWithTagsAndLikes]]
+  def getOpinionView(opinionId: Long): F[Option[OpinionWithTagsAndLikes]]
+
+  def getActiveOpinionView(opinionId: Long): F[Option[OpinionWithTagsAndLikes]]
+
+  def getActiveOpinion(opinionId: Long): F[Option[Opinion]]
 
   def update(opinion: Opinion): F[Boolean]
 

@@ -48,6 +48,22 @@ class OpinionServiceSpec extends FunSpec with Matchers {
       val placeValidation: PlaceValidationInterpreter[Id] = PlaceValidationInterpreter(memoryPlaceDAO)
       val opinionService: OpinionService[Id] = OpinionService(memoryOpinionDAO, memoryReportDAO, memoryUserDAO, opinionValidation, placeValidation)
 
+      memoryUserDAO.create(admin)
+      memoryUserDAO.create(userStephen)
+      memoryUserDAO.create(userKlay)
+      memoryUserDAO.create(userKevin)
+
+      memoryPlaceDAO.create(place)
+      memoryPlaceDAO.create(secondPlace)
+      memoryPlaceDAO.create(thirdPlace)
+      memoryPlaceDAO.create(fourthPlace)
+
+      //      tagsDAO.create(tagOne)
+      //      tagsDAO.create(tagTwo)
+      //      tagsDAO.create(tagThree)
+      //      tagsDAO.create(tagFour)
+
+
       new OpinionServiceSpecResources(
         memoryOpinionDAO,
         memoryReportDAO,
@@ -89,19 +105,17 @@ class OpinionServiceSpec extends FunSpec with Matchers {
   private val opinionOne: Opinion = Opinion(place.id.get, userStephen.id.get, "Opinion 1 Body".some)
   private val opinionTwo: Opinion = Opinion(place.id.get, userKlay.id.get, "Opinion 2 Body".some)
   private val opinionThree: Opinion = Opinion(place.id.get, userKevin.id.get, "Opinion 3 Body".some)
-  private val opinionFour: Opinion = Opinion(fourthPlace.id.get, userKevin.id.get, "Opinion 3 Body".some)
+  private val opinionFour: Opinion = Opinion(fourthPlace.id.get, userKevin.id.get, "Opinion 4 Body".some)
 
 
+  def insertOpinionWithTagsToDb(resources: OpinionServiceSpecResources, opinion: Opinion, tags: List[Tag]): Id[Opinion] = {
+    val opinionFromDb: Id[Opinion] = resources.opinionDAO.create(opinion)
+    resources.opinionDAO.addTags(opinionFromDb.id.get, tags.flatMap(_.id))
+    opinionFromDb
+  }
 
-  describe("Getting list of opinions for place") {
-
-    def insertOpinionWithTagsToDb(resources: OpinionServiceSpecResources, opinion: Opinion, tags: List[Tag]): Id[Opinion] = {
-      val opinionFromDb: Id[Opinion] = resources.opinionDAO.create(opinion)
-      resources.opinionDAO.addTags(opinionFromDb.id.get, tags.flatMap(_.id))
-      opinionFromDb
-    }
-
-    it("should return all opinion") {
+  describe("Getting list of all opinions") {
+    it("should return all opinions for Admin even blocked ones") {
       val resources = OpinionServiceSpecResources()
 
       val tagsForOpinionOne: List[Tag] = listOfTags.slice(0, 3)
@@ -111,20 +125,44 @@ class OpinionServiceSpec extends FunSpec with Matchers {
       val opinionTwoFromDb: Id[Opinion] = insertOpinionWithTagsToDb(resources, opinionTwo, tagsForOpinionTwo)
 
       val tagsForOpinionThree: List[Tag] = listOfTags.slice(2, 4)
-      val opinionThreeFromDb: Id[Opinion] = insertOpinionWithTagsToDb(resources, opinionThree, tagsForOpinionThree)
+      val opinionThreeFromDb: Id[Opinion] = insertOpinionWithTagsToDb(resources, opinionThree.copy(blocked = true), tagsForOpinionThree)
 
-      val getResult: Id[PaginatedResult[OpinionView]] = resources.opinionService.list(userStephenUserInfo, None, QueryParameters.empty, PagingRequest.empty)
+      val tagsForOpinionFour: List[Tag] = listOfTags.slice(2, 4)
+      val opinionFourFromDb: Id[Opinion] = insertOpinionWithTagsToDb(resources, opinionFour.copy(deleted = true), tagsForOpinionThree)
 
-      getResult.items shouldBe List(
+      val getResult: Id[Either[OpinionValidationError, PaginatedResult[OpinionView]]] = resources.opinionService.listAll(adminUserInfo, QueryParameters.empty, PagingRequest.empty).value
+
+      getResult.map(_.items) shouldBe Right(List(
         OpinionView(opinionThreeFromDb, tagsForOpinionThree.map(_.name), OpinionLikes.empty),
         OpinionView(opinionTwoFromDb, tagsForOpinionTwo.map(_.name), OpinionLikes.empty),
         OpinionView(opinionOneFromDb, tagsForOpinionOne.map(_.name), OpinionLikes.empty)
-      )
-      getResult.hasNextPage shouldBe false
-      getResult.totalCount shouldBe 3
+      ))
+      getResult.map(_.hasNextPage) shouldBe Right(false)
+      getResult.map(_.totalCount) shouldBe Right(3)
     }
 
-    it("should return all opinion for place") {
+    it("should return OpinionPrivilegeError for normal User") {
+      val resources = OpinionServiceSpecResources()
+
+      val getResult: Id[Either[OpinionValidationError, PaginatedResult[OpinionView]]] = resources.opinionService.listAll(userKevinUserInfo, QueryParameters.empty, PagingRequest.empty).value
+
+      getResult shouldBe Left(OpinionPrivilegeError)
+    }
+
+    it("should return empty list when there is no opinions") {
+      val resources = OpinionServiceSpecResources()
+
+      val getResult: Id[Either[OpinionValidationError, PaginatedResult[OpinionView]]] = resources.opinionService.listAll(adminUserInfo, QueryParameters.empty, PagingRequest.empty).value
+
+      getResult.map(_.items) shouldBe Right(List.empty)
+      getResult.map(_.hasNextPage) shouldBe Right(false)
+      getResult.map(_.totalCount) shouldBe Right(0)
+    }
+  }
+
+  describe("Getting list of opinions for place") {
+
+    it("should return all opinions for place (except blocked and deleted ones)") {
       val resources = OpinionServiceSpecResources()
 
       val tagsForOpinionOne: List[Tag] = listOfTags.slice(0, 3)
@@ -133,10 +171,16 @@ class OpinionServiceSpec extends FunSpec with Matchers {
       val tagsForOpinionTwo: List[Tag] = listOfTags.slice(1, 3)
       val opinionTwoFromDb: Id[Opinion] = insertOpinionWithTagsToDb(resources, opinionTwo, tagsForOpinionTwo)
 
-      val tagsForOpinionFour: List[Tag] = listOfTags.slice(2, 4)
-      val _: Id[Opinion] = insertOpinionWithTagsToDb(resources, opinionFour, tagsForOpinionFour)
+      val tagsForOpinionThree: List[Tag] = listOfTags.slice(2, 4)
+      val opinionThreeFromDb: Id[Opinion] = insertOpinionWithTagsToDb(resources, opinionThree.copy(blocked = true), tagsForOpinionThree)
 
-      val getResult: Id[PaginatedResult[OpinionView]] = resources.opinionService.list(userStephenUserInfo, place.id, QueryParameters.empty, PagingRequest.empty)
+      val tagsForOpinionFive: List[Tag] = listOfTags.slice(2, 4)
+      val opinionFiveFromDb: Id[Opinion] = insertOpinionWithTagsToDb(resources, opinionThree.copy(blocked = true), tagsForOpinionFive)
+
+      val tagsForOpinionFour: List[Tag] = listOfTags.slice(2, 4)
+      val opinionFourFromDb: Id[Opinion] = insertOpinionWithTagsToDb(resources, opinionFour, tagsForOpinionFour)
+
+      val getResult: Id[PaginatedResult[OpinionView]] = resources.opinionService.listForPlace(userStephenUserInfo, place.id.get, PagingRequest.empty)
 
       getResult.items shouldBe List(
         OpinionView(opinionTwoFromDb, tagsForOpinionTwo.map(_.name), OpinionLikes.empty),
@@ -146,10 +190,10 @@ class OpinionServiceSpec extends FunSpec with Matchers {
       getResult.totalCount shouldBe 2
     }
 
-    it("should return empty list when there is no opinions") {
+    it("should return empty list when there is no opinions for place") {
       val resources = OpinionServiceSpecResources()
 
-      val getResult: Id[PaginatedResult[OpinionView]] = resources.opinionService.list(adminUserInfo, None, QueryParameters.empty, PagingRequest.empty)
+      val getResult: Id[PaginatedResult[OpinionView]] = resources.opinionService.listForPlace(userStephenUserInfo, place.id.get, PagingRequest.empty)
 
       getResult.items shouldBe List.empty
       getResult.hasNextPage shouldBe false
@@ -167,7 +211,7 @@ class OpinionServiceSpec extends FunSpec with Matchers {
       val placeFromDb: Id[Place] = resources.placeDAO.create(place)
       val createResult: Id[Either[PlaceNotFoundError.type, OpinionView]] = resources.opinionService.addOpinion(userStephenUserInfo, placeFromDb.id.get, createOpinionModel).value
 
-      val fromDb: Id[Option[(Opinion, List[String], List[Long])]] = resources.opinionDAO.get(createResult.map(_.opinion).toOption.flatMap(_.id).get)
+      val fromDb = resources.opinionDAO.getActiveOpinionView(createResult.map(_.opinion).toOption.flatMap(_.id).get)
 
       createResult.map(_.opinion) shouldBe Right(fromDb.map(_._1).get)
       createResult.map(_.tags) shouldBe Right(fromDb.map(_._2).get)
@@ -190,7 +234,7 @@ class OpinionServiceSpec extends FunSpec with Matchers {
       val opinionOneFromDb: Id[Opinion] = resources.opinionDAO.create(opinionOne)
       val _: Id[Boolean] = resources.opinionDAO.addTags(opinionOneFromDb.id.get, tagsForOpinion.flatMap(_.id))
 
-      val getResult: Id[Either[OpinionNotFoundError.type, OpinionView]] = resources.opinionService.getOpinionView(userStephenUserInfo, opinionOneFromDb.id.get).value
+      val getResult: Id[Either[OpinionValidationError, OpinionView]] = resources.opinionService.getOpinionView(adminUserInfo, opinionOneFromDb.id.get).value
 
       getResult.map(_.opinion) shouldBe Right(opinionOneFromDb)
       getResult.map(_.likes) shouldBe Right(OpinionLikes.empty)
@@ -200,8 +244,7 @@ class OpinionServiceSpec extends FunSpec with Matchers {
     it("should return OpinionNotFoundError when Opinion does not exist") {
       val resources = OpinionServiceSpecResources()
       val notExistingOpinionId: Long = resources.opinionDAO.getLastOpinionId
-      val result: Id[Either[OpinionNotFoundError.type, OpinionModels.OpinionView]] =
-        resources.opinionService.getOpinionView(userStephenUserInfo, notExistingOpinionId).value
+      val result: Id[Either[OpinionValidationError, OpinionView]] = resources.opinionService.getOpinionView(adminUserInfo, notExistingOpinionId).value
 
       result shouldBe Left(OpinionNotFoundError)
     }
@@ -217,7 +260,7 @@ class OpinionServiceSpec extends FunSpec with Matchers {
 
       deleteByOwnerResult shouldBe Right(true)
 
-      val deletedOpinion: Id[Option[(Opinion, List[String], List[Long])]] = resources.opinionDAO.get(opinionId)
+      val deletedOpinion: Id[Option[Opinion]] = resources.opinionDAO.getActiveOpinion(opinionId)
       deletedOpinion shouldBe None
     }
 
@@ -230,7 +273,7 @@ class OpinionServiceSpec extends FunSpec with Matchers {
 
       deleteByAdminResult shouldBe Right(true)
 
-      val deletedOpinion: Id[Option[(Opinion, List[String], List[Long])]] = resources.opinionDAO.get(opinionId)
+      val deletedOpinion = resources.opinionDAO.getActiveOpinion(opinionId)
       deletedOpinion shouldBe None
     }
 
@@ -251,8 +294,8 @@ class OpinionServiceSpec extends FunSpec with Matchers {
 
       deleteBySomeoneElseResult shouldBe Left(OpinionOwnershipError)
 
-      val opinion: Id[Option[(Opinion, List[String], List[Long])]] = resources.opinionDAO.get(opinionId)
-      opinion.map(_._1) shouldBe opinionFromDb.some
+      val opinion = resources.opinionDAO.getActiveOpinion(opinionId)
+      opinion shouldBe opinionFromDb.some
     }
   }
 
@@ -268,8 +311,8 @@ class OpinionServiceSpec extends FunSpec with Matchers {
 
       updateByOwnerResult shouldBe Right(true)
 
-      val updatedOpinion: Id[Option[(Opinion, List[String], List[Long])]] = resources.opinionDAO.get(opinionId)
-      updatedOpinion.map(_._1) shouldBe opinionFromDb.copy(body = updateOpinionModel.body, lastModified = updatedOpinion.get._1.lastModified).some
+      val updatedOpinion = resources.opinionDAO.getActiveOpinion(opinionId)
+      updatedOpinion shouldBe opinionFromDb.copy(body = updateOpinionModel.body, lastModified = updatedOpinion.get.lastModified).some
     }
 
     it("should return OpinionNotFoundError when Opinion does not exist") {
@@ -289,8 +332,8 @@ class OpinionServiceSpec extends FunSpec with Matchers {
 
       updateByOwnerResult shouldBe Left(OpinionOwnershipError)
 
-      val sameOpinion: Id[Option[(Opinion, List[String], List[Long])]] = resources.opinionDAO.get(opinionId)
-      sameOpinion.map(_._1) shouldBe opinionFromDb.some
+      val sameOpinion = resources.opinionDAO.getActiveOpinion(opinionId)
+      sameOpinion shouldBe opinionFromDb.some
     }
   }
 
@@ -352,9 +395,11 @@ class OpinionServiceSpec extends FunSpec with Matchers {
       val reportByKevin: Id[Either[OpinionValidationError, Boolean]] = resources.opinionService.reportOpinion(userKevinUserInfo, opinionId, reportOpinionModel).value
       val resultBySteph: Id[Either[OpinionValidationError, Boolean]] = resources.opinionService.reportOpinion(userStephenUserInfo, opinionId, reportOpinionModel).value
 
-      val blockedOpinionGetResult: Option[Opinion] = resources.opinionDAO.get(opinionId).map(_._1)
+      val getActiveOpinionResult: Option[Opinion] = resources.opinionDAO.getActiveOpinion(opinionId)
+      getActiveOpinionResult shouldBe None
 
-      blockedOpinionGetResult shouldBe None
+      val getOpinionResult: Option[Opinion] = resources.opinionDAO.getOpinionView(opinionId).map(_._1)
+      getOpinionResult shouldBe opinionFromDb.copy(blocked = true).some
     }
   }
 
@@ -370,14 +415,17 @@ class OpinionServiceSpec extends FunSpec with Matchers {
 
       result shouldBe Right(true)
 
-      val blockedOpinion: Id[Option[(Opinion, List[String], List[Long])]] = resources.opinionDAO.get(opinionId)
-      blockedOpinion shouldBe None
+      val activeOpinion = resources.opinionDAO.getActiveOpinion(opinionId)
+      activeOpinion shouldBe None
+
+      val blockedOpinion = resources.opinionDAO.getOpinionView(opinionId).map(_._1)
+      blockedOpinion shouldBe opinionFromDb.copy(blocked = true).some
     }
 
     it("should return OpinionNotFoundError when Opinion does not exist") {
       val resources = OpinionServiceSpecResources()
       val notExistingOpinionId: Long = resources.opinionDAO.getLastOpinionId
-      val result: Id[Either[OpinionValidationError, Boolean]] = resources.opinionService.updateOpinionStatus(userStephenUserInfo, notExistingOpinionId, updateStatusModel).value
+      val result: Id[Either[OpinionValidationError, Boolean]] = resources.opinionService.updateOpinionStatus(adminUserInfo, notExistingOpinionId, updateStatusModel).value
 
       result shouldBe Left(OpinionNotFoundError)
     }
@@ -396,13 +444,13 @@ class OpinionServiceSpec extends FunSpec with Matchers {
 
       result shouldBe Right(true)
 
-      val getResultAsSteph: Id[Either[OpinionNotFoundError.type, OpinionView]] = resources.opinionService.getOpinionView(userStephenUserInfo, opinionId).value
-      getResultAsSteph.map(_.opinion) shouldBe Right(opinionFromDb)
-      getResultAsSteph.map(_.likes) shouldBe Right(OpinionLikes(1, likedByYou = false))
+      val getResultAsSteph: OpinionView = resources.opinionService.listForPlace(userStephenUserInfo, opinionOne.placeId, PagingRequest.empty).items.head
+      getResultAsSteph.opinion shouldBe opinionFromDb
+      getResultAsSteph.likes shouldBe OpinionLikes(1, likedByYou = false)
 
-      val getResultAsKlay: Id[Either[OpinionNotFoundError.type, OpinionView]] = resources.opinionService.getOpinionView(userKlayUserInfo, opinionId).value
-      getResultAsKlay.map(_.opinion) shouldBe Right(opinionFromDb)
-      getResultAsKlay.map(_.likes) shouldBe Right(OpinionLikes(1, likedByYou = true))
+      val getResultAsKlay: OpinionView = resources.opinionService.listForPlace(userKlayUserInfo, opinionOne.placeId, PagingRequest.empty).items.head
+      getResultAsKlay.opinion shouldBe opinionFromDb
+      getResultAsKlay.likes shouldBe OpinionLikes(1, likedByYou = true)
     }
 
     it("should remove like from opinion") {
@@ -415,13 +463,13 @@ class OpinionServiceSpec extends FunSpec with Matchers {
 
       result shouldBe Right(true)
 
-      val getResultAsSteph: Id[Either[OpinionNotFoundError.type, OpinionView]] = resources.opinionService.getOpinionView(userStephenUserInfo, opinionId).value
-      getResultAsSteph.map(_.opinion) shouldBe Right(opinionFromDb)
-      getResultAsSteph.map(_.likes) shouldBe Right(OpinionLikes(0, likedByYou = false))
+      val getResultAsSteph: OpinionView = resources.opinionService.listForPlace(userStephenUserInfo, opinionOne.placeId, PagingRequest.empty).items.head
+      getResultAsSteph.opinion shouldBe opinionFromDb
+      getResultAsSteph.likes shouldBe OpinionLikes(0, likedByYou = false)
 
-      val getResultAsKlay: Id[Either[OpinionNotFoundError.type, OpinionView]] = resources.opinionService.getOpinionView(userKlayUserInfo, opinionId).value
-      getResultAsKlay.map(_.opinion) shouldBe Right(opinionFromDb)
-      getResultAsKlay.map(_.likes) shouldBe Right(OpinionLikes(0, likedByYou = false))
+      val getResultAsKlay: OpinionView = resources.opinionService.listForPlace(userKlayUserInfo, opinionOne.placeId, PagingRequest.empty).items.head
+      getResultAsKlay.opinion shouldBe opinionFromDb
+      getResultAsKlay.likes shouldBe OpinionLikes(0, likedByYou = false)
     }
 
     it("should return OpinionAlreadyLikedError when user already like opinion") {
@@ -468,9 +516,14 @@ class OpinionServiceSpec extends FunSpec with Matchers {
       val reportTwoFromDb: Id[Report] = resources.reportDAO.create(reportTwo)
       val reportThreeFromDb: Id[Report] = resources.reportDAO.create(reportThree)
 
-      val result: Id[List[Report]] = resources.reportDAO.list(opinionId)
+      val result = resources.opinionService.reports(adminUserInfo, opinionId).value
 
-      result shouldBe List(reportThreeFromDb, reportTwoFromDb, reportOneFromDb)
+      val listOfReportViews = List(reportThreeFromDb, reportTwoFromDb, reportOneFromDb) zip
+        List(userStephenUserInfo, userKevinUserInfo, userKlayUserInfo) map { case (report, userInfo) =>
+        ReportView.fromReport(userInfo.id, userInfo.userName, report)
+      }
+
+      result shouldBe Right(listOfReportViews)
     }
 
     it("should return empty reports list when opinion has no reports") {
@@ -478,17 +531,26 @@ class OpinionServiceSpec extends FunSpec with Matchers {
       val opinionFromDb: Id[Opinion] = resources.opinionDAO.create(opinionOne)
       val opinionId: Long = opinionFromDb.id.get
 
-      val result: Id[List[Report]] = resources.reportDAO.list(opinionId)
+      val result = resources.opinionService.reports(adminUserInfo, opinionId).value
 
-      result shouldBe List.empty
+      result shouldBe Right(List.empty)
     }
 
     it("should return OpinionNotFoundError when Opinion does not exist") {
       val resources = OpinionServiceSpecResources()
       val notExistingOpinionId: Long = resources.opinionDAO.getLastOpinionId
-      val result: Id[Either[OpinionNotFoundError.type, List[ReportView]]] = resources.opinionService.reports(userStephenUserInfo, notExistingOpinionId).value
+      val result = resources.opinionService.reports(adminUserInfo, notExistingOpinionId).value
 
       result shouldBe Left(OpinionNotFoundError)
+    }
+
+    it("should return OpinionPrivilegeError for normal User") {
+      val resources = OpinionServiceSpecResources()
+      val notExistingOpinionId: Long = resources.opinionDAO.getLastOpinionId
+
+      val result = resources.opinionService.reports(userKevinUserInfo, notExistingOpinionId).value
+
+      result shouldBe Left(OpinionPrivilegeError)
     }
   }
 

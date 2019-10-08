@@ -25,7 +25,9 @@ class SlickOpinionDAOInterpreter(implicit ec: ExecutionContext) extends OpinionD
   private val tags: TableQuery[TagTable] = TableQuery[TagTable]
   private val opinionsLikes: TableQuery[OpinionLikeTable] = TableQuery[OpinionLikeTable]
 
-  private lazy val activeOpinions = opinions filter (_.deleted === false) filter (_.blocked === false)
+
+  private lazy val notDeletedOpinions = opinions filter (_.deleted === false)
+  private lazy val activeOpinions = notDeletedOpinions filter (_.blocked === false)
 
 
   override def create(opinion: Opinion): DBIO[Opinion] = {
@@ -57,13 +59,30 @@ class SlickOpinionDAOInterpreter(implicit ec: ExecutionContext) extends OpinionD
       .map(_ === 1)
   }
 
-  override def get(opinionId: Long): DBIO[Option[(Opinion, List[String], List[Long])]] = {
+  override def getOpinionView(opinionId: Long): DBIO[Option[(Opinion, List[String], List[Long])]] = {
+    getOpinion(opinionId, allowBlocked = true)
+  }
+
+  override def getActiveOpinionView(opinionId: Long): DBIO[Option[(Opinion, List[String], List[Long])]] = {
+    getOpinion(opinionId, allowBlocked = false)
+  }
+
+  override def getActiveOpinion(opinionId: Long): DBIO[Option[Opinion]] = {
+    activeOpinions.filter(_.id === opinionId).result.headOption
+  }
+
+  private def getOpinion(opinionId: Long, allowBlocked: Boolean): DBIO[Option[(Opinion, List[String], List[Long])]] = {
+    val opinionsBaseSet = if (allowBlocked) {
+      notDeletedOpinions
+    } else {
+      activeOpinions
+    }
 
     val opinionsWithJoins: Query[(OpinionTable, Rep[Option[String]], Rep[Option[Long]]), (Opinion, Option[String], Option[Long]), Seq] = for {
-      (_, maybeOpinionTagTable) <- activeOpinions filter (_.id === opinionId) joinLeft opinionsTags on (_.id === _.opinionId)
+      (_, maybeOpinionTagTable) <- opinionsBaseSet filter (_.id === opinionId) joinLeft opinionsTags on (_.id === _.opinionId)
       tagId = maybeOpinionTagTable.map(_.tagId)
       (_, tagTable) <- opinionsTags filter (_.tagId === tagId) joinLeft tags on (_.tagId === _.id)
-      (opinionTable, opinionLikesTable) <- activeOpinions filter (_.id === opinionId) joinLeft opinionsLikes on (_.id === _.opinionId)
+      (opinionTable, opinionLikesTable) <- opinionsBaseSet filter (_.id === opinionId) joinLeft opinionsLikes on (_.id === _.opinionId)
     } yield (opinionTable, tagTable.map(_.name), opinionLikesTable.map(_.userId))
 
     opinionsWithJoins.result map { rows =>
@@ -115,7 +134,7 @@ class SlickOpinionDAOInterpreter(implicit ec: ExecutionContext) extends OpinionD
   private def opinionsWithJoins(maybePlaceId: Option[Long]): Query[(OpinionTable, Rep[Option[TagTable]], Rep[Option[OpinionLikeTable]]), (Opinion, Option[HmTag], Option[OpinionLike]), Seq] = {
     val opinionsForPlaceOrAll: Query[OpinionTable, Opinion, Seq] = maybePlaceId map { placeId =>
       activeOpinions filter (_.placeId === placeId)
-    } getOrElse activeOpinions
+    } getOrElse notDeletedOpinions
 
     val queryWithJoins = for {
       (_, maybeOpinionTagTable) <- opinionsForPlaceOrAll joinLeft opinionsTags on (_.id === _.opinionId)

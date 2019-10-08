@@ -29,7 +29,18 @@ class OpinionService[F[_] : Monad](
   opinionValidation: OpinionValidationAlgebra[F],
   placeValidation: PlaceValidationAlgebra[F]) {
 
-  def list(userInfo: UserInfo, maybePlaceId: Option[Long], queryParameters: QueryParameters, pagingRequest: PagingRequest): F[PaginatedResult[OpinionView]] = {
+  def listAll(userInfo: UserInfo, queryParameters: QueryParameters, pagingRequest: PagingRequest): EitherT[F, OpinionValidationError, PaginatedResult[OpinionView]] = {
+    for {
+      _ <- EitherT(Monad[F].pure(opinionValidation.validateAdminAccess(userInfo)))
+      opinions <- EitherT.liftF(list(userInfo, None, queryParameters, pagingRequest))
+    } yield opinions
+  }
+
+  def listForPlace(userInfo: UserInfo, placeId: Long, pagingRequest: PagingRequest): F[PaginatedResult[OpinionView]] = {
+    list(userInfo, placeId.some, QueryParameters.empty, pagingRequest)
+  }
+
+  private def list(userInfo: UserInfo, maybePlaceId: Option[Long], queryParameters: QueryParameters, pagingRequest: PagingRequest): F[PaginatedResult[OpinionView]] = {
     maybePlaceId map { placeId =>
       opinionDAO.listForPlace(placeId, pagingRequest)
     } getOrElse {
@@ -47,13 +58,17 @@ class OpinionService[F[_] : Monad](
       opinion = Opinion.fromCreateOpinionModel(placeId, userInfo.id, createOpinionModel)
       newOpinion <- EitherT.liftF(opinionDAO.create(opinion))
       _ <- EitherT.liftF(opinionDAO.addTags(newOpinion.id.get, createOpinionModel.tagsIds))
-      opinionView <- EitherT.liftF(getOpinionView(userInfo, newOpinion.id.get).toOption.value.map(_.get))
+      opinionView <- EitherT.liftF(opinionDAO.getActiveOpinionView(newOpinion.id.get).map(_.get).map { case (opinion, tagsNames, likesIds) =>
+        OpinionView(opinion, tagsNames, OpinionLikes.fromListOfIds(userInfo.id, likesIds))
+      }): EitherT[F, PlaceNotFoundError.type, OpinionView]
     } yield opinionView
   }
 
-  def getOpinionView(userInfo: UserInfo, opinionId: Long): EitherT[F, OpinionNotFoundError.type, OpinionView] = {
-    EitherT.fromOptionF(opinionDAO.get(opinionId), OpinionNotFoundError) map { case (opinion, tagsNames, likesIds) =>
-      OpinionView(opinion, tagsNames, OpinionLikes.fromListOfIds(userInfo.id, likesIds))
+  def getOpinionView(userInfo: UserInfo, opinionId: Long): EitherT[F, OpinionValidationError, OpinionView] = {
+    EitherT(Monad[F].pure(opinionValidation.validateAdminAccess(userInfo))) flatMap { _ =>
+      EitherT.fromOptionF(opinionDAO.getOpinionView(opinionId), OpinionNotFoundError: OpinionValidationError) map { case (opinion, tagsNames, likesIds) =>
+        OpinionView(opinion, tagsNames, OpinionLikes.fromListOfIds(userInfo.id, likesIds))
+      }
     }
   }
 
@@ -101,7 +116,7 @@ class OpinionService[F[_] : Monad](
     for {
       _ <- opinionValidation.exists(opinionId)
       _ <- validateOwnershipIfNonAdmin(userInfo.role)(userInfo.id, opinionId)
-      opinionToUpdate <- getOpinionView(userInfo, opinionId).map(_.opinion)
+      opinionToUpdate <- EitherT.fromOptionF(opinionDAO.getActiveOpinion(opinionId), OpinionNotFoundError)
       updatedOpinion = updateOpinionData(opinionToUpdate)
       updateOpinionResult <- EitherT.liftF(opinionDAO.update(updatedOpinion))
       updateTagsResult <- EitherT.liftF(updateTags)
@@ -121,7 +136,7 @@ class OpinionService[F[_] : Monad](
 
     val REPORTS_LIMIT: Int = 3
 
-    def blockOpinionWithThreeReports(reportsCount:Int, opinion: Opinion): F[Boolean] = {
+    def blockOpinionWithThreeReports(reportsCount: Int, opinion: Opinion): F[Boolean] = {
       if (reportsCount >= REPORTS_LIMIT) {
         opinionDAO.update(opinion.copy(blocked = true))
       } else {
@@ -131,7 +146,7 @@ class OpinionService[F[_] : Monad](
 
     for {
       _ <- opinionValidation.exists(opinionId)
-      opinion <- getOpinionView(userInfo, opinionId).map(_.opinion)
+      opinion <- EitherT.fromOptionF(opinionDAO.getActiveOpinion(opinionId), OpinionNotFoundError)
       reports <- EitherT.liftF(reportDAO.list(opinionId))
       _ <- validateReportUniqueness(reports)
       report = Report.fromReportOpinionModel(userInfo.id, opinion.id.get, reportOpinionModel)
@@ -142,9 +157,10 @@ class OpinionService[F[_] : Monad](
 
   def updateOpinionStatus(userInfo: UserInfo, opinionId: Long, updateOpinionStatusModel: UpdateOpinionStatusModel): EitherT[F, OpinionValidationError, Boolean] = {
     for {
+      _ <- EitherT(Monad[F].pure(opinionValidation.validateAdminAccess(userInfo)))
       _ <- opinionValidation.exists(opinionId)
-      opinion <- getOpinionView(userInfo, opinionId).map(_.opinion)
-      updateResult <- EitherT.liftF(opinionDAO.update(opinion.copy(deleted = updateOpinionStatusModel.blocked)))
+      opinion <- EitherT.fromOptionF(opinionDAO.getOpinionView(opinionId), OpinionNotFoundError).map(_._1)
+      updateResult <- EitherT.liftF(opinionDAO.update(opinion.copy(blocked = updateOpinionStatusModel.blocked)))
     } yield updateResult
   }
 
@@ -153,7 +169,7 @@ class OpinionService[F[_] : Monad](
     def likeOrUnlikeOpinion(opinionLikes: OpinionLikes): EitherT[F, OpinionValidationError, Boolean] = {
       if (updateOpinionLikesModel.like) {
         if (opinionLikes.likedByYou) {
-          EitherT.leftT[F, Boolean](OpinionAlreadyLikedError : OpinionValidationError)
+          EitherT.leftT[F, Boolean](OpinionAlreadyLikedError: OpinionValidationError)
         } else {
           EitherT.liftF(opinionDAO.addLike(opinionId, userInfo.id))
         }
@@ -161,25 +177,28 @@ class OpinionService[F[_] : Monad](
         if (opinionLikes.likedByYou) {
           EitherT.liftF(opinionDAO.removeLike(opinionId, userInfo.id))
         } else {
-          EitherT.leftT[F, Boolean](OpinionWasNotLikedError : OpinionValidationError)
+          EitherT.leftT[F, Boolean](OpinionWasNotLikedError: OpinionValidationError)
         }
       }
     }
 
     for {
       _ <- opinionValidation.exists(opinionId)
-      opinionLikes <- getOpinionView(userInfo, opinionId).map(_.likes)
+      opinionLikes <- EitherT.fromOptionF(opinionDAO.getActiveOpinionView(opinionId), OpinionNotFoundError)
+        .map(_._3).map(likesIds => OpinionLikes.fromListOfIds(userInfo.id, likesIds))
       updatedOpinionOpinionLikesResult <- likeOrUnlikeOpinion(opinionLikes)
     } yield updatedOpinionOpinionLikesResult
   }
 
-  def reports(userInfo: UserInfo, opinionId: Long): EitherT[F, OpinionNotFoundError.type, List[ReportView]] = {
+  def reports(userInfo: UserInfo, opinionId: Long): EitherT[F, OpinionValidationError, List[ReportView]] = {
 
     def collectReportAuthors(reports: List[Report]): F[Map[Long, User]] = {
+      println(reports)
       val authorsIds: List[Long] = reports.map(_.authorId)
       val authorsF: F[List[User]] = userDAO.get(authorsIds)
 
       authorsF.map { authors: List[User] =>
+        println(authors)
         reports.foldLeft(Map.empty[Long, User]) { (acc, report) =>
           val author: User = authors.find(_.id == Option(report.authorId)).get
           acc + (report.id.get -> author)
@@ -195,8 +214,9 @@ class OpinionService[F[_] : Monad](
     }
 
     for {
+      _ <- EitherT(Monad[F].pure(opinionValidation.validateAdminAccess(userInfo)))
       _ <- opinionValidation.exists(opinionId)
-      opinion <- getOpinionView(userInfo, opinionId).map(_.opinion)
+      opinion <- EitherT.liftF(opinionDAO.getOpinionView(opinionId)).map(_.get).map(_._1)
       reports <- EitherT.liftF(reportDAO.list(opinion.id.get))
       reportAuthors <- EitherT.liftF(collectReportAuthors(reports))
       reportViews = buildReportViews(reports, reportAuthors)
