@@ -10,13 +10,13 @@ import com.pwos.api.domain.users.UserInfo
 class TagService[F[_] : Monad](tagDAO: TagDAOAlgebra[F], tagValidation: TagValidationAlgebra[F]) {
 
   def listActiveTags(): F[List[Tag]] = {
-    tagDAO.listActiveTags
+    tagDAO.list(active = true)
   }
 
   def listAllTags(userInfo: UserInfo, active: Boolean): EitherT[F, TagPrivilegeError.type, List[Tag]] = {
     for {
       _ <- EitherT(Monad[F].pure(tagValidation.validateAdminAccess(userInfo)))
-      tags <- EitherT.liftF(tagDAO.listAllTags(active))
+      tags <- EitherT.liftF(tagDAO.list(active))
     } yield tags
   }
 

@@ -14,12 +14,7 @@ class MemoryTagDAOInterpreter extends TagDAOAlgebra[Id] {
 
   def getLastId: Long = tagId
 
-
-  override def listActiveTags: Id[List[Tag]] = {
-    listAllTags(active = true)
-  }
-
-  override def listAllTags(active: Boolean): Id[List[Tag]] = {
+  override def list(active: Boolean): Id[List[Tag]] = {
     this.tags.filter(_.enabled === active)
   }
 

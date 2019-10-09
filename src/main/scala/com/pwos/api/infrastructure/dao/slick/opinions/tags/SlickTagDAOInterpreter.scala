@@ -14,11 +14,7 @@ class SlickTagDAOInterpreter(implicit ec: ExecutionContext) extends TagDAOAlgebr
 
   val tags: TableQuery[TagTable] = TableQuery[TagTable]
 
-  override def listActiveTags: DBIO[List[HmTag]] = {
-    listAllTags(active = true)
-  }
-
-  override def listAllTags(active: Boolean): DBIO[List[HmTag]] = {
+  override def list(active: Boolean): DBIO[List[HmTag]] = {
     tags.filter(_.enabled === active).result.map(_.toList)
   }
 
