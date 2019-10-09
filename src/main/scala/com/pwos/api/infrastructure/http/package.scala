@@ -106,7 +106,7 @@ package object http {
 
     def notFound[T <: HelloMountainsError : Encoder](value: T): HttpResponse = clientErrorResponse(value, StatusCodes.NotFound)
 
-    def internalServerError[T: Encoder](value: T): HttpResponse = internalErrorResponse(value)
+    def internalServerError[T: Encoder](value: T = "Something went wrong"): HttpResponse = internalErrorResponse(value)
 
 
     def withRequestLogging: Directive0 = {
