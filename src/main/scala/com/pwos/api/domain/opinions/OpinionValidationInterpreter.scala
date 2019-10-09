@@ -5,11 +5,11 @@ import cats.implicits._
 import cats.data.EitherT
 import cats.data.OptionT
 import com.pwos.api.domain.HelloMountainsError._
+import com.pwos.api.domain.authentication.AuthValidation
 import com.pwos.api.domain.users.UserInfo
-import com.pwos.api.domain.users.UserRole
 
 
-class OpinionValidationInterpreter[F[_] : Monad](opinionDAO: OpinionDAOAlgebra[F]) extends OpinionValidationAlgebra[F] {
+class OpinionValidationInterpreter[F[_] : Monad](opinionDAO: OpinionDAOAlgebra[F]) extends OpinionValidationAlgebra[F] with AuthValidation {
 
   override def exists(opinionId: Long): EitherT[F, OpinionNotFoundError.type, Unit] = {
     EitherT.fromOptionF(opinionDAO.getActiveOpinion(opinionId), OpinionNotFoundError).map(_ => ())
@@ -24,12 +24,9 @@ class OpinionValidationInterpreter[F[_] : Monad](opinionDAO: OpinionDAOAlgebra[F
   }
 
   override def validateAdminAccess(userInfo: UserInfo): Either[OpinionPrivilegeError.type, Unit] = {
-    if (userInfo.role == UserRole.Admin) {
-      ().asRight[OpinionPrivilegeError.type]
-    } else {
-      OpinionPrivilegeError.asLeft[Unit]
-    }
+    super.validateAdminAccess[OpinionPrivilegeError.type](userInfo)(OpinionPrivilegeError)
   }
+
 }
 
 

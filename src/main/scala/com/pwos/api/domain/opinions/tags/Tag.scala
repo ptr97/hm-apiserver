@@ -16,3 +16,13 @@ case class Tag(
   enabled: Boolean = true,
   id: Option[Long] = None
 )
+
+object TagModels {
+
+  case class UpdateTagModel(
+    maybeName: Option[String] = None,
+    maybeTagCategory: Option[TagCategory.Value] = None,
+    maybeEnabled: Option[Boolean] = None,
+  )
+
+}

@@ -1,5 +1,6 @@
 package com.pwos.api.domain
 
+import com.pwos.api.domain.opinions.tags.Tag
 import com.pwos.api.domain.places.Place
 
 object HelloMountainsError {
@@ -65,6 +66,19 @@ object HelloMountainsError {
   }
 
   case object PlacePrivilegeError extends PlaceValidationError with PrivilegeError
+
+
+  sealed trait TagValidationError extends HelloMountainsError
+
+  case object TagPrivilegeError extends TagValidationError with PrivilegeError
+
+  case class TagAlreadyExistsError(tag: Tag) extends TagValidationError {
+    override def message: String = s"""Tag with name ${tag.name} already exists."""
+  }
+
+  case object TagNotFoundError extends TagValidationError {
+    override def message: String = "Tag does not exist."
+  }
 
 
   sealed trait OpinionValidationError extends HelloMountainsError
