@@ -7,10 +7,11 @@ import cats.data.Validated.Valid
 import cats.data.ValidatedNel
 import cats.implicits._
 import com.pwos.api.domain.HelloMountainsError._
+import com.pwos.api.domain.authentication.AuthValidation
 import com.pwos.api.domain.users.UserModels.UpdateUserCredentialsModel
 
 
-class UserValidationInterpreter[F[_] : Monad](userDAO: UserDAOAlgebra[F]) extends UserValidationAlgebra[F] {
+class UserValidationInterpreter[F[_] : Monad](userDAO: UserDAOAlgebra[F]) extends UserValidationAlgebra[F] with AuthValidation {
 
   private def validateFieldUniques(field: String, fetchByField: String => F[Option[User]], error: UserValidationError): F[ValidatedNel[UserValidationError, Unit]] = {
     val userF: F[Option[User]] = fetchByField(field)
@@ -115,6 +116,9 @@ class UserValidationInterpreter[F[_] : Monad](userDAO: UserDAOAlgebra[F]) extend
     }
   }
 
+  override def validateAdminAccess(userInfo: UserInfo): Either[UserPrivilegeError.type, Unit] = {
+    super.validateAdminAccess[UserPrivilegeError.type](userInfo)(UserPrivilegeError)
+  }
 }
 
 object UserValidationInterpreter {

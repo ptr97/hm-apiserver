@@ -31,23 +31,29 @@ class UserService[F[_] : Monad](userDAO: UserDAOAlgebra[F], userValidation: User
 
   }
 
-  def getSimpleView(id: Long): EitherT[F, UserNotFoundError.type, UserView] = {
-    val userView: OptionT[F, UserView] = OptionT(userDAO.get(id)).flatMap { user =>
+  def getSimpleView(userId: Long): EitherT[F, UserNotFoundError.type, UserView] = {
+    val userView: OptionT[F, UserView] = OptionT(userDAO.get(userId)).filterNot(_.banned).flatMap { user =>
       OptionT.fromOption(user.toView)
     }
 
     EitherT.fromOptionF(userView.value, UserNotFoundError)
   }
 
-  def getFullData(id: Long): EitherT[F, UserNotFoundError.type, User] = {
-    EitherT.fromOptionF(userDAO.get(id), UserNotFoundError)
+  def getFullData(userInfo: UserInfo, userId: Long): EitherT[F, UserValidationError, User] = {
+    for {
+      _ <- EitherT(Monad[F].pure(userValidation.validateAdminAccess(userInfo)))
+      fullData <- EitherT.fromOptionF(userDAO.get(userId), UserNotFoundError: UserValidationError)
+    } yield fullData
   }
 
-  def list(queryParameters: QueryParameters, pagingRequest: PagingRequest): F[PaginatedResult[UserView]] = {
-    userDAO.list(queryParameters, pagingRequest).map(_.flatMapResult(_.toView))
+  def list(userInfo: UserInfo, queryParameters: QueryParameters, pagingRequest: PagingRequest): EitherT[F, UserPrivilegeError.type, PaginatedResult[UserView]] = {
+    for {
+      _ <- EitherT(Monad[F].pure(userValidation.validateAdminAccess(userInfo)))
+      users <- EitherT.liftF(userDAO.list(queryParameters, pagingRequest).map(_.flatMapResult(_.toView)))
+    } yield users
   }
 
-  def updateCredentials(id: Long, updateUserCredentialsModel: UpdateUserCredentialsModel): EitherT[F, NonEmptyList[UserValidationError], UserView] = {
+  def updateCredentials(userId: Long, updateUserCredentialsModel: UpdateUserCredentialsModel): EitherT[F, NonEmptyList[UserValidationError], UserView] = {
     type UserUpdate = User => Option[User]
 
     val updateUsername: UserUpdate = user => updateUserCredentialsModel.userName.map(name => user.copy(userName = name))
@@ -61,8 +67,8 @@ class UserService[F[_] : Monad](userDAO: UserDAOAlgebra[F], userValidation: User
 
     EitherT(Monad[F].pure(userValidation.validateUserUpdateModel(updateUserCredentialsModel).toEither)) flatMap { _ =>
       EitherT(userValidation.doesNotExist(updateUserCredentialsModel.userName, updateUserCredentialsModel.email).map(_.toEither)) flatMap { _ =>
-        userValidation.exists(Option(id)).leftMap(NonEmptyList.of(_)) flatMap { _ =>
-          EitherT.fromOptionF(userDAO.get(id), NonEmptyList.of(UserNotFoundError)) flatMap { user: User =>
+        userValidation.exists(userId.some).leftMap(NonEmptyList.of(_)) flatMap { _ =>
+          EitherT.fromOptionF(userDAO.get(userId), NonEmptyList.of(UserNotFoundError)) flatMap { user: User =>
             val updatedUser: EitherT[F, NonEmptyList[UserValidationError], User] = EitherT.fromOptionF(userDAO.update(updateUserData(user)), NonEmptyList.of(UserNotFoundError))
             updatedUser.map(_.toView.get)
           }
@@ -71,7 +77,7 @@ class UserService[F[_] : Monad](userDAO: UserDAOAlgebra[F], userValidation: User
     }
   }
 
-  def updatePassword(id: Long, changePasswordModel: ChangePasswordModel): EitherT[F, NonEmptyList[UserValidationError], Boolean] = {
+  def updatePassword(userId: Long, changePasswordModel: ChangePasswordModel): EitherT[F, NonEmptyList[UserValidationError], Boolean] = {
 
     val validatePassword: (String, Password) => EitherT[F, UserValidationError, Unit] = (plainPassword, hashedPassword) => {
       if (PasswordService.compare(plainPassword, hashedPassword)) {
@@ -87,8 +93,8 @@ class UserService[F[_] : Monad](userDAO: UserDAOAlgebra[F], userValidation: User
     }
 
     EitherT(Monad[F].pure(userValidation.validateChangePasswordModel(changePasswordModel).toEither)) flatMap { _ =>
-      userValidation.exists(Option(id)).leftMap(err => NonEmptyList.of(err)) flatMap { _ =>
-        EitherT.fromOptionF(userDAO.get(id), NonEmptyList.of(UserNotFoundError)) flatMap { user: User =>
+      userValidation.exists(userId.some).leftMap(err => NonEmptyList.of(err)) flatMap { _ =>
+        EitherT.fromOptionF(userDAO.get(userId), NonEmptyList.of(UserNotFoundError)) flatMap { user: User =>
           validatePassword(changePasswordModel.oldPassword, user.password).leftMap(NonEmptyList.of(_)) flatMap { _ =>
             val userWithHashedPassword: User = getUserWithHashedPassword(user)
             val updatedUser: EitherT[F, NonEmptyList[UserValidationError], User] = EitherT.fromOptionF(userDAO.update(userWithHashedPassword), NonEmptyList.of(UserNotFoundError))
@@ -99,18 +105,19 @@ class UserService[F[_] : Monad](userDAO: UserDAOAlgebra[F], userValidation: User
     }
   }
 
-  def updateStatus(id: Long, updateUserStatusModel: UpdateUserStatusModel): EitherT[F, UserValidationError, User] = {
+  def updateStatus(userInfo: UserInfo, userId: Long, updateUserStatusModel: UpdateUserStatusModel): EitherT[F, UserValidationError, User] = {
     for {
-      _ <- userValidation.exists(Option(id))
-      user <- getFullData(id)
+      _ <- EitherT(Monad[F].pure(userValidation.validateAdminAccess(userInfo)))
+      _ <- userValidation.exists(userId.some)
+      user <- getFullData(userInfo, userId)
       updatedUser <- EitherT.fromOptionF(userDAO.update(user.copy(banned = updateUserStatusModel.banned)), UserNotFoundError: UserValidationError)
     } yield updatedUser
   }
 
-  def delete(id: Long): EitherT[F, UserValidationError, Boolean] = {
+  def delete(userId: Long): EitherT[F, UserValidationError, Boolean] = {
     for {
-      _ <- userValidation.exists(Option(id))
-      deleteResult <- EitherT.liftF(userDAO.delete(id))
+      _ <- userValidation.exists(userId.some)
+      deleteResult <- EitherT.liftF(userDAO.delete(userId))
     } yield deleteResult
   }
 

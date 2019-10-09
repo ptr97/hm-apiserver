@@ -47,3 +47,8 @@ class MemoryTagDAOInterpreter extends TagDAOAlgebra[Id] {
   }
 
 }
+
+object MemoryTagDAOInterpreter {
+  def apply(): MemoryTagDAOInterpreter =
+    new MemoryTagDAOInterpreter()
+}

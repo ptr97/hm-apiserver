@@ -17,7 +17,6 @@ class MemoryUserDAOInterpreter extends UserDAOAlgebra[Id] {
 
   def getLastId: Long = userIdAutoIncrement
 
-  private def activeUsers: List[User] = users filter (_.banned === false)
 
   override def create(user: User): Id[User] = {
     val userWithId: User = user.copy(id = Some(userIdAutoIncrement))
@@ -27,21 +26,21 @@ class MemoryUserDAOInterpreter extends UserDAOAlgebra[Id] {
   }
 
   override def get(id: Long): Id[Option[User]] = {
-    activeUsers.find(_.id === Option(id))
+    users.find(_.id === id.some)
   }
 
   override def get(ids: List[Long]): Id[List[User]] = {
-    activeUsers.filter { user =>
+    users.filter { user =>
       ids.contains(user.id.get)
     }
   }
 
   override def findByName(name: String): Id[Option[User]] = {
-    activeUsers.find(_.userName === name)
+    users.find(_.userName === name)
   }
 
   override def findByEmail(email: String): Id[Option[User]] = {
-    activeUsers.find(_.email === email)
+    users.find(_.email === email)
   }
 
   override def update(user: User): Id[Option[User]] = {
@@ -62,13 +61,13 @@ class MemoryUserDAOInterpreter extends UserDAOAlgebra[Id] {
   }
 
   override def list(queryParameters: QueryParameters, pagingRequest: PagingRequest): Id[PaginatedResult[User]] = {
-    val sortedUsers: List[User] = activeUsers.sortBy(_.id)
+    val sortedUsers: List[User] = users.sortBy(_.id)
     val withOffset: List[User] = sortedUsers.drop(pagingRequest.offset)
     val withLimit: List[User] = pagingRequest.maybePageSize.map { pageSize =>
       withOffset.take(pageSize)
     } getOrElse withOffset
 
-    PaginatedResult.build(withLimit, activeUsers.length, pagingRequest)
+    PaginatedResult.build(withLimit, users.length, pagingRequest)
   }
 }
 

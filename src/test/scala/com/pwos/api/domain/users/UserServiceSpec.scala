@@ -3,8 +3,6 @@ package com.pwos.api.domain.users
 import cats.Id
 import cats.data.NonEmptyList
 import cats.implicits._
-import com.pwos.api.PaginatedResult
-import com.pwos.api.domain.HelloMountainsError
 import com.pwos.api.domain.HelloMountainsError._
 import com.pwos.api.domain.PagingRequest
 import com.pwos.api.domain.QueryParameters
@@ -22,10 +20,18 @@ class UserServiceSpec extends FunSpec with Matchers {
 
   private def getTestResources: (MemoryUserDAOInterpreter, UserService[Id]) = {
     val memoryUserDAO = MemoryUserDAOInterpreter()
+    val adminFromDb: Id[User] = memoryUserDAO.create(admin)
+    adminView = adminFromDb.toView.get
+    adminUserInfo = UserInfo.forUser(adminFromDb)
+
     val userValidation: UserValidationInterpreter[Id] = UserValidationInterpreter(memoryUserDAO)
     val userService: UserService[Id] = UserService(memoryUserDAO, userValidation)
     (memoryUserDAO, userService)
   }
+
+  private val admin: User = User("admin", "admin@hm.com", "Secret123", UserRole.Admin)
+  private var adminView: UserView = _
+  private var adminUserInfo: UserInfo = _
 
   private val userStephenPasswordPlain = "Password123"
   private val userStephenPasswordHashed = PasswordService.hash(userStephenPasswordPlain)
@@ -33,7 +39,7 @@ class UserServiceSpec extends FunSpec with Matchers {
 
   private val userKlay: User = User("klayThompson", "klay@gsw.com", "SecretPass123", UserRole.User)
   private val userKevin: User = User("kevinDurant", "kevin@gsw.com", "SecretPass123", UserRole.User)
-  private val admin: User = User("steveKerr", "steve@gsw.com", "Secret123", UserRole.Admin)
+
 
   describe("Creating a new user - user registration") {
 
@@ -141,7 +147,7 @@ class UserServiceSpec extends FunSpec with Matchers {
     it("should return simple user view") {
       val (userDAO, userService) = getTestResources
       val userFromDb: Id[User] = userDAO.create(userStephen)
-      val getResult: Id[Either[HelloMountainsError.UserNotFoundError.type, UserView]] = userService.getSimpleView(userFromDb.id.get).value
+      val getResult: Id[Either[UserNotFoundError.type, UserView]] = userService.getSimpleView(userFromDb.id.get).value
 
       getResult shouldBe Right(UserView(userFromDb.id.get, userStephen.userName, userStephen.email))
     }
@@ -149,7 +155,7 @@ class UserServiceSpec extends FunSpec with Matchers {
     it("should UserNotFoundError when user doesn't exist") {
       val (userDAO, userService) = getTestResources
       val notExistingId: Long = userDAO.getLastId + 1
-      val getResult: Id[Either[HelloMountainsError.UserNotFoundError.type, UserView]] = userService.getSimpleView(notExistingId).value
+      val getResult: Id[Either[UserNotFoundError.type, UserView]] = userService.getSimpleView(notExistingId).value
 
       getResult shouldBe Left(UserNotFoundError)
     }
@@ -159,7 +165,7 @@ class UserServiceSpec extends FunSpec with Matchers {
     it("should return full user data") {
       val (userDAO, userService) = getTestResources
       val userFromDb: Id[User] = userDAO.create(userStephen)
-      val getResult: Id[Either[HelloMountainsError.UserNotFoundError.type, User]] = userService.getFullData(userFromDb.id.get).value
+      val getResult = userService.getFullData(adminUserInfo, userFromDb.id.get).value
 
       getResult shouldBe Right(userStephen.copy(id = userFromDb.id))
     }
@@ -167,7 +173,7 @@ class UserServiceSpec extends FunSpec with Matchers {
     it("should UserNotFoundError when user doesn't exist") {
       val (userDAO, userService) = getTestResources
       val notExistingId: Long = userDAO.getLastId + 1
-      val getResult: Id[Either[HelloMountainsError.UserNotFoundError.type, User]] = userService.getFullData(notExistingId).value
+      val getResult = userService.getFullData(adminUserInfo, notExistingId).value
 
       getResult shouldBe Left(UserNotFoundError)
     }
@@ -178,13 +184,13 @@ class UserServiceSpec extends FunSpec with Matchers {
     val emptyQueryParams: QueryParameters = QueryParameters.empty
     val emptyPagingReq: PagingRequest = PagingRequest.empty
 
-    it("should return empty list when there is no users") {
+    it("should return empty list when there is no users - only with admin for call this function") {
       val (_, userService) = getTestResources
-      val getAllUsersResult: Id[PaginatedResult[UserView]] = userService.list(emptyQueryParams, emptyPagingReq)
+      val getAllUsersResult = userService.list(adminUserInfo, emptyQueryParams, emptyPagingReq).value
 
-      getAllUsersResult.items shouldBe List.empty[UserView]
-      getAllUsersResult.totalCount shouldBe 0
-      getAllUsersResult.hasNextPage shouldBe false
+      getAllUsersResult.map(_.items) shouldBe Right(List(adminView))
+      getAllUsersResult.map(_.totalCount) shouldBe Right(1)
+      getAllUsersResult.map(_.hasNextPage) shouldBe Right(false)
     }
 
     it("should return all users") {
@@ -192,10 +198,9 @@ class UserServiceSpec extends FunSpec with Matchers {
       val u1: UserView = userDAO.create(userStephen).map(_.toView).get
       val u2: UserView = userDAO.create(userKlay).map(_.toView).get
       val u3: UserView = userDAO.create(userKevin).map(_.toView).get
-      val u4: UserView = userDAO.create(admin).map(_.toView).get
-      val allUsers: List[UserView] = List(u1, u2, u3, u4)
+      val allUsers: List[UserView] = List(adminView, u1, u2, u3)
 
-      val getAllUsersResult: Id[PaginatedResult[UserView]] = userService.list(emptyQueryParams, emptyPagingReq)
+      val getAllUsersResult = userService.list(adminUserInfo, emptyQueryParams, emptyPagingReq).value.toOption.get
 
       getAllUsersResult.items shouldBe allUsers
       getAllUsersResult.totalCount shouldBe allUsers.length
@@ -207,13 +212,12 @@ class UserServiceSpec extends FunSpec with Matchers {
       val u1: UserView = userDAO.create(userStephen).map(_.toView).get
       val u2: UserView = userDAO.create(userKlay).map(_.toView).get
       val u3: UserView = userDAO.create(userKevin).map(_.toView).get
-      val u4: UserView = userDAO.create(admin).map(_.toView).get
-      val allUsers: List[UserView] = List(u1, u2, u3, u4)
+      val allUsers: List[UserView] = List(adminView, u1, u2, u3)
 
       val pageSize = 2
       val pagingRequest: PagingRequest = PagingRequest(0, Some(pageSize), None)
 
-      val getAllUsersResult: Id[PaginatedResult[UserView]] = userService.list(emptyQueryParams, pagingRequest)
+      val getAllUsersResult = userService.list(adminUserInfo, emptyQueryParams, pagingRequest).value.toOption.get
 
 
       getAllUsersResult.items shouldBe allUsers.take(pageSize)
@@ -226,14 +230,13 @@ class UserServiceSpec extends FunSpec with Matchers {
       val u1: UserView = userDAO.create(userStephen).map(_.toView).get
       val u2: UserView = userDAO.create(userKlay).map(_.toView).get
       val u3: UserView = userDAO.create(userKevin).map(_.toView).get
-      val u4: UserView = userDAO.create(admin).map(_.toView).get
-      val allUsers: List[UserView] = List(u1, u2, u3, u4)
+      val allUsers: List[UserView] = List(adminView, u1, u2, u3)
 
       val pageSize = 2
       val page = 1
       val pagingRequest: PagingRequest = PagingRequest(page, Some(pageSize), None)
 
-      val getAllUsersResult: Id[PaginatedResult[UserView]] = userService.list(emptyQueryParams, pagingRequest)
+      val getAllUsersResult = userService.list(adminUserInfo, emptyQueryParams, pagingRequest).value.toOption.get
 
 
       getAllUsersResult.items shouldBe allUsers.drop(page * pageSize)
@@ -246,16 +249,15 @@ class UserServiceSpec extends FunSpec with Matchers {
       val u1: UserView = userDAO.create(userStephen).map(_.toView).get
       val u2: UserView = userDAO.create(userKlay).map(_.toView).get
       val u3: UserView = userDAO.create(userKevin).map(_.toView).get
-      val u4: UserView = userDAO.create(admin).map(_.toView).get
-      val allUsers: List[UserView] = List(u1, u2, u3, u4)
+      val allUsers: List[UserView] = List(adminView, u1, u2, u3)
 
       val pageSize = 1
       val page = 1
       val pagingRequest: PagingRequest = PagingRequest(page, Some(pageSize), None)
 
-      val getAllUsersResult: Id[PaginatedResult[UserView]] = userService.list(emptyQueryParams, pagingRequest)
+      val getAllUsersResult = userService.list(adminUserInfo, emptyQueryParams, pagingRequest).value.toOption.get
 
-      getAllUsersResult.items shouldBe List(u2)
+      getAllUsersResult.items shouldBe List(u1)
       getAllUsersResult.totalCount shouldBe allUsers.length
       getAllUsersResult.hasNextPage shouldBe true
     }
@@ -441,12 +443,12 @@ class UserServiceSpec extends FunSpec with Matchers {
       val userFromDb: Id[User] = userDAO.create(userStephen)
       val newBannedStatus: Boolean = true
       val updateUserStatusModel = UpdateUserStatusModel(banned = newBannedStatus)
-      val updateStatusResult: Id[Either[UserValidationError, User]] = userService.updateStatus(userFromDb.id.get, updateUserStatusModel).value
+      val updateStatusResult: Id[Either[UserValidationError, User]] = userService.updateStatus(adminUserInfo, userFromDb.id.get, updateUserStatusModel).value
 
       updateStatusResult shouldBe Right(userFromDb.copy(banned = newBannedStatus))
 
-      val userCheck: Id[Option[User]] = userDAO.get(userFromDb.id.get)
-      userCheck shouldBe None
+      val userCheck: Id[User] = userDAO.get(userFromDb.id.get).get
+      userCheck shouldBe userFromDb.copy(banned = true)
     }
 
     it("should unblock user") {
@@ -455,7 +457,7 @@ class UserServiceSpec extends FunSpec with Matchers {
       val bannedUserFromDb: Id[User] = userDAO.update(userFromDb.copy(banned = true)).get
       val newBannedStatus: Boolean = false
       val updateUserStatusModel = UpdateUserStatusModel(banned = newBannedStatus)
-      val updateStatusResult: Id[Either[UserValidationError, User]] = userService.updateStatus(userFromDb.id.get, updateUserStatusModel).value
+      val updateStatusResult = userService.updateStatus(adminUserInfo, userFromDb.id.get, updateUserStatusModel).value
 
       updateStatusResult shouldBe Right(bannedUserFromDb.copy(banned = newBannedStatus))
       val userCheck: Id[User] = userDAO.get(userFromDb.id.get).get
@@ -468,7 +470,7 @@ class UserServiceSpec extends FunSpec with Matchers {
       val newBannedStatus: Boolean = true
       val updateUserStatusModel = UpdateUserStatusModel(banned = newBannedStatus)
 
-      val updateStatusResult: Id[Either[UserValidationError, User]] = userService.updateStatus(notExistingId, updateUserStatusModel).value
+      val updateStatusResult: Id[Either[UserValidationError, User]] = userService.updateStatus(adminUserInfo, notExistingId, updateUserStatusModel).value
 
       updateStatusResult shouldBe Left(UserNotFoundError)
     }

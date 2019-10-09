@@ -20,4 +20,6 @@ trait UserValidationAlgebra[F[_]] {
 
   def validateChangePasswordModel(changePasswordModel: ChangePasswordModel): ValidatedNel[UserValidationError, Unit]
 
+  def validateAdminAccess(userInfo: UserInfo): Either[UserPrivilegeError.type, Unit]
+
 }

@@ -2,6 +2,7 @@ package com.pwos.api.infrastructure.http
 
 import akka.http.scaladsl.server.Directives._
 import akka.http.scaladsl.server.Route
+import com.pwos.api.domain.HelloMountainsError._
 import com.pwos.api.domain.users.UserModels._
 import com.pwos.api.domain.users.UserRole
 import com.pwos.api.domain.users.UserService
@@ -26,10 +27,13 @@ class UserController(userService: UserService[DBIO])(implicit ec: ExecutionConte
 
 
   def listUsers: Route = path(v1 / USERS) {
-    authorizedGet(UserRole.Admin) { _ =>
+    authorizedGet(UserRole.Admin) { userInfo =>
       pagingParameters { (queryParameters, pagingRequest) =>
         complete {
-          userService.list(queryParameters, pagingRequest).unsafeRun map (HttpOps.ok(_))
+          userService.list(userInfo, queryParameters, pagingRequest).value.unsafeRun map {
+            case Right(users) => HttpOps.ok(users)
+            case Left(userPrivilegeError) => HttpOps.forbidden(userPrivilegeError)
+          }
         }
       }
     }
@@ -37,11 +41,15 @@ class UserController(userService: UserService[DBIO])(implicit ec: ExecutionConte
 
 
   def getUser: Route = path(v1 / USERS / LongNumber) { userId: Long =>
-    authorizedGet(UserRole.Admin) { _ =>
+    authorizedGet(UserRole.Admin) { userInfo =>
       complete {
-        userService.getFullData(userId).value.unsafeRun map {
+        userService.getFullData(userInfo, userId).value.unsafeRun map {
           case Right(user) => HttpOps.ok(user)
-          case Left(userNotFoundError) => HttpOps.notFound(userNotFoundError)
+          case Left(userError) => userError match {
+            case userError: UserNotFoundError.type => HttpOps.notFound(userError)
+            case userError: UserPrivilegeError.type => HttpOps.forbidden(userError)
+            case _ => HttpOps.internalServerError()
+          }
         }
       }
     }
@@ -85,12 +93,16 @@ class UserController(userService: UserService[DBIO])(implicit ec: ExecutionConte
   }
 
   def updateUserStatus: Route = path(v1 / USERS / LongNumber) { userId: Long =>
-    authorizedPut(UserRole.Admin) { _ =>
+    authorizedPut(UserRole.Admin) { userInfo =>
       entity(as[UpdateUserStatusModel]) { updateStatusModel =>
         complete {
-          userService.updateStatus(userId, updateStatusModel).value.unsafeRun map {
+          userService.updateStatus(userInfo, userId, updateStatusModel).value.unsafeRun map {
             case Right(user) => HttpOps.ok(user)
-            case Left(userNotFoundError) => HttpOps.badRequest(userNotFoundError)
+            case Left(userError) => userError match {
+              case userError: UserNotFoundError.type => HttpOps.notFound(userError)
+              case userError: UserPrivilegeError.type => HttpOps.forbidden(userError)
+              case _ => HttpOps.internalServerError()
+            }
           }
         }
       }
