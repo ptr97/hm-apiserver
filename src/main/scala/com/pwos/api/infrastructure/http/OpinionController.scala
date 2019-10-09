@@ -97,7 +97,7 @@ class OpinionController(opinionService: OpinionService[DBIO])(implicit ec: Execu
       complete {
         opinionService.deleteOpinion(userInfo, opinionId).value.unsafeRun map {
           case Right(true) => HttpOps.ok("Opinion deleted")
-          case Right(false) => HttpOps.internalServerError("Something went wrong")
+          case Right(false) => HttpOps.internalServerError()
           case Left(opinionError) => opinionError match {
             case opinionNotFoundError: OpinionNotFoundError.type => HttpOps.notFound(opinionNotFoundError)
             case opinionDeletePrivilegeError: OpinionOwnershipError.type => HttpOps.forbidden(opinionDeletePrivilegeError)
@@ -137,7 +137,7 @@ class OpinionController(opinionService: OpinionService[DBIO])(implicit ec: Execu
         complete {
           opinionService.reportOpinion(userInfo, opinionId, reportOpinionModel).value.unsafeRun map {
             case Right(true) => HttpOps.ok("Opinion reported")
-            case Right(false) => HttpOps.internalServerError("Something went wrong")
+            case Right(false) => HttpOps.internalServerError()
             case Left(opinionNotFoundError) => HttpOps.badRequest(opinionNotFoundError)
           }
         }

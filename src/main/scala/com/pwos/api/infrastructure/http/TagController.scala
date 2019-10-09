@@ -57,7 +57,7 @@ class TagController(tagService: TagService[DBIO])(implicit ec: ExecutionContext,
               tagError match {
                 case tagError: TagAlreadyExistsError => HttpOps.badRequest(tagError)
                 case tagError: TagPrivilegeError.type => HttpOps.forbidden(tagError)
-                case _ => HttpOps.internalServerError("Something went wrong.")
+                case _ => HttpOps.internalServerError()
               }
           }
         }
@@ -75,7 +75,7 @@ class TagController(tagService: TagService[DBIO])(implicit ec: ExecutionContext,
               tagError match {
                 case tagError: TagNotFoundError.type => HttpOps.badRequest(tagError)
                 case tagError: TagPrivilegeError.type => HttpOps.forbidden(tagError)
-                case _ => HttpOps.internalServerError("Something went wrong.")
+                case _ => HttpOps.internalServerError()
               }
           }
         }
