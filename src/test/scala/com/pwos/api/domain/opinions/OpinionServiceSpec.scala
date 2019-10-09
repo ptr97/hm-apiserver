@@ -31,10 +31,7 @@ class OpinionServiceSpec extends FunSpec with Matchers {
   case class OpinionServiceSpecResources(
     opinionDAO: MemoryOpinionDAOInterpreter,
     reportDAO: MemoryReportDAOInterpreter,
-    userDAO: MemoryUserDAOInterpreter,
-    placeDAO: MemoryPlaceDAOInterpreter,
     opinionValidation: OpinionValidationInterpreter[Id],
-    placeValidation: PlaceValidationInterpreter[Id],
     opinionService: OpinionService[Id]
   )
 
@@ -69,10 +66,7 @@ class OpinionServiceSpec extends FunSpec with Matchers {
       new OpinionServiceSpecResources(
         memoryOpinionDAO,
         memoryReportDAO,
-        memoryUserDAO,
-        memoryPlaceDAO,
         opinionValidation,
-        placeValidation,
         opinionService
       )
     }
@@ -210,8 +204,7 @@ class OpinionServiceSpec extends FunSpec with Matchers {
 
     it("should add new opinion") {
       val resources = OpinionServiceSpecResources()
-      val placeFromDb: Id[Place] = resources.placeDAO.create(place)
-      val createResult: Id[Either[PlaceNotFoundError.type, OpinionView]] = resources.opinionService.addOpinion(userStephenUserInfo, placeFromDb.id.get, createOpinionModel).value
+      val createResult: Id[Either[PlaceNotFoundError.type, OpinionView]] = resources.opinionService.addOpinion(userStephenUserInfo, place.id.get, createOpinionModel).value
 
       val fromDb = resources.opinionDAO.getActiveOpinionView(createResult.map(_.opinion).toOption.flatMap(_.id).get)
 
@@ -222,8 +215,7 @@ class OpinionServiceSpec extends FunSpec with Matchers {
 
     it("should not add opinion when place which opinion reference to does not exist") {
       val resources = OpinionServiceSpecResources()
-      val notExistingPlaceId: Long = resources.placeDAO.getLastId
-      val result: Id[Either[PlaceNotFoundError.type, OpinionView]] = resources.opinionService.addOpinion(userStephenUserInfo, notExistingPlaceId, createOpinionModel).value
+      val result: Id[Either[PlaceNotFoundError.type, OpinionView]] = resources.opinionService.addOpinion(userStephenUserInfo, fourthPlace.id.get + 50, createOpinionModel).value
 
       result shouldBe Left(PlaceNotFoundError)
     }
