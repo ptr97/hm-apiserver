@@ -20,6 +20,7 @@ import com.pwos.api.domain.users.UserRole
 import com.pwos.api.infrastructure.dao.memory.MemoryOpinionDAOInterpreter
 import com.pwos.api.infrastructure.dao.memory.MemoryPlaceDAOInterpreter
 import com.pwos.api.infrastructure.dao.memory.MemoryReportDAOInterpreter
+import com.pwos.api.infrastructure.dao.memory.MemoryTagDAOInterpreter
 import com.pwos.api.infrastructure.dao.memory.MemoryUserDAOInterpreter
 import org.scalatest.FunSpec
 import org.scalatest.Matchers
@@ -44,6 +45,7 @@ class OpinionServiceSpec extends FunSpec with Matchers {
       val memoryReportDAO = MemoryReportDAOInterpreter()
       val memoryUserDAO = MemoryUserDAOInterpreter()
       val memoryPlaceDAO = MemoryPlaceDAOInterpreter()
+      val memoryTagDAO = MemoryTagDAOInterpreter()
       val opinionValidation: OpinionValidationInterpreter[Id] = OpinionValidationInterpreter(memoryOpinionDAO)
       val placeValidation: PlaceValidationInterpreter[Id] = PlaceValidationInterpreter(memoryPlaceDAO)
       val opinionService: OpinionService[Id] = OpinionService(memoryOpinionDAO, memoryReportDAO, memoryUserDAO, opinionValidation, placeValidation)
@@ -58,10 +60,10 @@ class OpinionServiceSpec extends FunSpec with Matchers {
       memoryPlaceDAO.create(thirdPlace)
       memoryPlaceDAO.create(fourthPlace)
 
-      //      tagsDAO.create(tagOne)
-      //      tagsDAO.create(tagTwo)
-      //      tagsDAO.create(tagThree)
-      //      tagsDAO.create(tagFour)
+      memoryTagDAO.create(tagOne)
+      memoryTagDAO.create(tagTwo)
+      memoryTagDAO.create(tagThree)
+      memoryTagDAO.create(tagFour)
 
 
       new OpinionServiceSpecResources(

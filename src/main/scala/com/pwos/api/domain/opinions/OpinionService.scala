@@ -21,7 +21,7 @@ import com.pwos.api.domain.users.UserRole
 import com.pwos.api.domain.users.UserRole.UserRole
 import org.joda.time.DateTime
 
-// TODO: Refactor and refactor tests at the end
+
 class OpinionService[F[_] : Monad](
   opinionDAO: OpinionDAOAlgebra[F],
   reportDAO: ReportDAOAlgebra[F],

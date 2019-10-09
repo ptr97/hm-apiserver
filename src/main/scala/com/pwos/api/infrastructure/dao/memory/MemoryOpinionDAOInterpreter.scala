@@ -147,7 +147,6 @@ class MemoryOpinionDAOInterpreter(tags: List[Tag]) extends OpinionDAOAlgebra[Id]
 }
 
 object MemoryOpinionDAOInterpreter {
-  // TODO: Remove tags dependency
   def apply(tags: List[Tag]): MemoryOpinionDAOInterpreter =
     new MemoryOpinionDAOInterpreter(tags)
 }
