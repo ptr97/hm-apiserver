@@ -9,12 +9,11 @@ case class User(
   password: Password,
   role: UserRole.UserRole = UserRole.User,
   banned: Boolean = false,
-  deleted: Boolean = false,
   id: Option[Long] = None
 ) {
   def toView: Option[UserView] = id.map { id => UserView(id, userName, email) }
 
-  def buildUserInfo: Option[UserInfo] = id.map { id => UserInfo(id, userName, email, role, banned, deleted) }
+  def buildUserInfo: Option[UserInfo] = id.map { id => UserInfo(id, userName, email, role, banned) }
 }
 
 
@@ -32,7 +31,7 @@ object UserModels {
 
 }
 
-case class UserInfo(id: Long, userName: String, email: String, role: UserRole.UserRole, banned: Boolean, deleted: Boolean)
+case class UserInfo(id: Long, userName: String, email: String, role: UserRole.UserRole, banned: Boolean)
 
 object UserInfo {
   def forUser(user: User): UserInfo = {
@@ -41,8 +40,7 @@ object UserInfo {
       userName = user.userName,
       email = user.email,
       role = user.role,
-      banned = user.banned,
-      deleted = user.deleted
+      banned = user.banned
     )
   }
 }

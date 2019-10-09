@@ -18,7 +18,6 @@ CREATE TABLE USER (
     PASSWORD varchar(512) COLLATE utf8mb4_unicode_ci NOT NULL,
     ROLE ENUM('user', 'admin') NOT NULL DEFAULT 'user',
     BANNED boolean NOT NULL DEFAULT false,
-    DELETED boolean NOT NULL DEFAULT false,
     PRIMARY KEY (ID),
     CONSTRAINT cannot_duplicate_username UNIQUE KEY(USERNAME),
     CONSTRAINT cannot_duplicate_email UNIQUE KEY(EMAIL)

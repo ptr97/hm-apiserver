@@ -110,7 +110,7 @@ class UserService[F[_] : Monad](userDAO: UserDAOAlgebra[F], userValidation: User
   def delete(id: Long): EitherT[F, UserValidationError, Boolean] = {
     for {
       _ <- userValidation.exists(Option(id))
-      deleteResult <- EitherT.liftF(userDAO.markDeleted(id))
+      deleteResult <- EitherT.liftF(userDAO.delete(id))
     } yield deleteResult
   }
 

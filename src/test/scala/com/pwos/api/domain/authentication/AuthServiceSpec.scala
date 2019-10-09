@@ -48,15 +48,6 @@ class AuthServiceSpec extends FunSpec with Matchers {
       val result = authService.get(userFromDb.id.get).value
       result shouldBe Left(UserNotFoundError)
     }
-
-    it("should return UserNotFoundError when user is marked as deleted") {
-      val (userDAO, authService) = getTestResources
-      val userFromDb: Id[User] = userDAO.create(userStephen.copy(deleted = true))
-
-      val result = authService.get(userFromDb.id.get).value
-      result shouldBe Left(UserNotFoundError)
-    }
-
   }
 
   describe("Logging In User") {

@@ -49,7 +49,6 @@ abstract class SecuredAccess(implicit ec: ExecutionContext, database: Database) 
   private def hasApiAccess(userInfoFromToken: UserInfo, requiredRole: UserRole.Value): Boolean = {
     validateTokenUserInfo(userInfoFromToken) &&
     isNotBanned(userInfoFromToken) &&
-    isNotDeleted(userInfoFromToken) &&
     validateRequiredRole(userInfoFromToken.role, requiredRole)
   }
 
@@ -65,7 +64,7 @@ abstract class SecuredAccess(implicit ec: ExecutionContext, database: Database) 
 
   private def compareUsersFromDbAndToken(user: User, userInfo: UserInfo): Boolean = {
     user.id == Option(userInfo.id) && user.userName == userInfo.userName && user.email == userInfo.email &&
-      user.banned == userInfo.banned && user.deleted == userInfo.deleted && user.role == userInfo.role
+      user.banned == userInfo.banned && user.role == userInfo.role
   }
 
   private def validateRequiredRole(actualRole: UserRole.Value, requiredRole: UserRole.Value): Boolean = {
@@ -74,10 +73,6 @@ abstract class SecuredAccess(implicit ec: ExecutionContext, database: Database) 
 
   private def isNotBanned(userInfo: UserInfo): Boolean = {
     !userInfo.banned
-  }
-
-  private def isNotDeleted(userInfo: UserInfo): Boolean = {
-    !userInfo.deleted
   }
 
   private def getAuthService(implicit ec: ExecutionContext): AuthService[DBIO] = {

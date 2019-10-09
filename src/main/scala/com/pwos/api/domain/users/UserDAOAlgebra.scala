@@ -19,7 +19,7 @@ trait UserDAOAlgebra[F[_]] {
 
   def update(user: User): F[Option[User]]
 
-  def markDeleted(id: Long): F[Boolean]
+  def delete(id: Long): F[Boolean]
 
   def list(queryParameters: QueryParameters, pagingRequest: PagingRequest): F[PaginatedResult[User]]
 

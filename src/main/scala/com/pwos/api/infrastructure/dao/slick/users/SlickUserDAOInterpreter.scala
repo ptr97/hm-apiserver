@@ -18,7 +18,7 @@ import scala.concurrent.ExecutionContext
 final class SlickUserDAOInterpreter(implicit ec: ExecutionContext) extends UserDAOAlgebra[DBIO] {
   val users: TableQuery[UserTable] = TableQuery[UserTable]
 
-  private def activeUsers = users filter (_.banned === false) filter (_.deleted === false)
+  private def activeUsers = users filter (_.banned === false)
 
   override def create(user: User): DBIO[User] = {
     users returning users
@@ -47,8 +47,8 @@ final class SlickUserDAOInterpreter(implicit ec: ExecutionContext) extends UserD
     }
   }
 
-  override def markDeleted(id: Long): DBIO[Boolean] = {
-    users.filter(_.id === id).map(_.deleted).update(true).map(_ == 1)
+  override def delete(id: Long): DBIO[Boolean] = {
+    users.filter(_.id === id).delete.map(_ == 1)
   }
 
   override def list(queryParameters: QueryParameters, pagingRequest: PagingRequest): DBIO[PaginatedResult[User]] = {

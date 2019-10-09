@@ -18,7 +18,6 @@ class UserTable(tag: Tag) extends Table[User](tag, "USER") {
   def password: Rep[String]       = column[String]("PASSWORD")
   def role: Rep[UserRole.Value]   = column[UserRole.Value]("ROLE")
   def banned: Rep[Boolean]        = column[Boolean]("BANNED")
-  def deleted: Rep[Boolean]       = column[Boolean]("DELETED")
 
 
   override def * : ProvenShape[User] = (
@@ -27,7 +26,6 @@ class UserTable(tag: Tag) extends Table[User](tag, "USER") {
     password,
     role,
     banned,
-    deleted,
     id.?
   ) <> (User.apply _ tupled, User.unapply)
 }

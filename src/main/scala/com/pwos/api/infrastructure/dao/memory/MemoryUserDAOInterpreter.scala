@@ -17,7 +17,7 @@ class MemoryUserDAOInterpreter extends UserDAOAlgebra[Id] {
 
   def getLastId: Long = userIdAutoIncrement
 
-  private def activeUsers: List[User] = users filter (_.banned === false) filter (_.deleted === false)
+  private def activeUsers: List[User] = users filter (_.banned === false)
 
   override def create(user: User): Id[User] = {
     val userWithId: User = user.copy(id = Some(userIdAutoIncrement))
@@ -53,11 +53,11 @@ class MemoryUserDAOInterpreter extends UserDAOAlgebra[Id] {
     } yield updated
   }
 
-  override def markDeleted(id: Long): Id[Boolean] = {
+  override def delete(id: Long): Id[Boolean] = {
     (for {
       found <- get(id)
-      deletedUser = found.copy(deleted = true)
-      _ <- update(deletedUser)
+      newList = this.users.filterNot(_.id === found.id)
+      _ = this.users = newList
     } yield true) getOrElse false
   }
 

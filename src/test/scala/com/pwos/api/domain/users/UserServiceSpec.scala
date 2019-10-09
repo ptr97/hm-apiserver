@@ -445,8 +445,8 @@ class UserServiceSpec extends FunSpec with Matchers {
 
       updateStatusResult shouldBe Right(userFromDb.copy(banned = newBannedStatus))
 
-      val userCheck: Id[User] = userDAO.get(userFromDb.id.get).get
-      userCheck.banned shouldBe newBannedStatus
+      val userCheck: Id[Option[User]] = userDAO.get(userFromDb.id.get)
+      userCheck shouldBe None
     }
 
     it("should unblock user") {
@@ -483,8 +483,8 @@ class UserServiceSpec extends FunSpec with Matchers {
 
       updateStatusResult shouldBe Right(true)
 
-      val userCheck: Id[User] = userDAO.get(userFromDb.id.get).get
-      userCheck.deleted shouldBe true
+      val userCheck: Id[Option[User]] = userDAO.get(userFromDb.id.get)
+      userCheck shouldBe None
     }
 
     it("should return proper error when user does not exist") {

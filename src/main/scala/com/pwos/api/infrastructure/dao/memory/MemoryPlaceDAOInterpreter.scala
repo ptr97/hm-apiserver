@@ -35,12 +35,11 @@ final class MemoryPlaceDAOInterpreter extends PlaceDAOAlgebra[Id] {
   }
 
   override def delete(id: Long): Id[Boolean] = {
-    val success = for {
+    (for {
       found <- get(id)
       newList = this.places.filterNot(_.id === found.id)
       _ = this.places = newList
-    } yield true
-    success getOrElse false
+    } yield true) getOrElse false
   }
 
   override def all: Id[List[Place]] = this.places
