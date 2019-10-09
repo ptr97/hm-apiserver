@@ -14,10 +14,6 @@ import com.pwos.api.infrastructure.http.authentication.JwtAuth
 
 class AuthService[F[_]](userDAO: UserDAOAlgebra[F]) {
 
-  def get(id: Long)(implicit F: Functor[F]): EitherT[F, UserNotFoundError.type, User] = {
-    EitherT.fromOptionF(userDAO.get(id), UserNotFoundError)
-  }
-
   def logIn(loginModel: LoginModel)(implicit M: Monad[F]): EitherT[F, IncorrectCredentials.type, JsonWebToken] = {
     val userByNameOrByEmail: String => EitherT[F, IncorrectCredentials.type, User] = userNameOrEmail =>
       EitherT.fromOptionF(userDAO.findByName(userNameOrEmail), IncorrectCredentials) orElse

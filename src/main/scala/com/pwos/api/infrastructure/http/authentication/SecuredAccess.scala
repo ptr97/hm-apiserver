@@ -23,7 +23,7 @@ import scala.language.postfixOps
 
 abstract class SecuredAccess(implicit ec: ExecutionContext, database: Database) {
 
-  private val authService: AuthService[DBIO] = getAuthService
+  private val userDAO: SlickUserDAOInterpreter = SlickUserDAOInterpreter(ec)
 
   def authorizedGet(requiredRole: UserRole.Value): Directive1[UserInfo] = authorizedMethod(get)(requiredRole)
 
@@ -53,7 +53,7 @@ abstract class SecuredAccess(implicit ec: ExecutionContext, database: Database) 
   }
 
   private def validateTokenUserInfo(userInfoFromToken: UserInfo): Boolean = {
-    val userFromDb: OptionT[DBIO, User] = authService.get(userInfoFromToken.id).toOption
+    val userFromDb: OptionT[DBIO, User] = OptionT(userDAO.get(userInfoFromToken.id))
 
     val isValidFuture: Future[Boolean] = userFromDb.filter { user: User =>
       compareUsersFromDbAndToken(user, userInfoFromToken)
@@ -73,12 +73,6 @@ abstract class SecuredAccess(implicit ec: ExecutionContext, database: Database) 
 
   private def isNotBanned(userInfo: UserInfo): Boolean = {
     !userInfo.banned
-  }
-
-  private def getAuthService(implicit ec: ExecutionContext): AuthService[DBIO] = {
-    lazy val userDAOInterpreter = SlickUserDAOInterpreter(ec)
-    lazy val authService = AuthService(userDAOInterpreter)
-    authService
   }
 
 }
