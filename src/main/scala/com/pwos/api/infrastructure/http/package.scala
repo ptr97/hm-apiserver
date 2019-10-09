@@ -86,10 +86,10 @@ package object http {
         headers = List(RawHeader("Access-Control-Allow-Origin", "*")))
     }
 
-    private def internalErrorResponse[T: Encoder](value: T, statusCode: StatusCode = StatusCodes.InternalServerError): HttpResponse = {
-      logResponse(value, statusCode)
+    private def internalErrorResponse(statusCode: StatusCode = StatusCodes.InternalServerError): HttpResponse = {
+      logResponse("Internal Server Error", statusCode)
       HttpResponse(status = statusCode,
-        entity = HttpEntity(`application/json`, ErrorResponse(value).toJson),
+        entity = HttpEntity(`application/json`, ErrorResponse("Something went wrong").toJson),
         headers = List(RawHeader("Access-Control-Allow-Origin", "*")))
     }
 
@@ -106,7 +106,7 @@ package object http {
 
     def notFound[T <: HelloMountainsError : Encoder](value: T): HttpResponse = clientErrorResponse(value, StatusCodes.NotFound)
 
-    def internalServerError[T: Encoder](): HttpResponse = internalErrorResponse(value = "Something went wrong")
+    def internalServerError(): HttpResponse = internalErrorResponse()
 
 
     def withRequestLogging: Directive0 = {
