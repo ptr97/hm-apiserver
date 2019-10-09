@@ -18,12 +18,12 @@ class AuthService[F[_]](userDAO: UserDAOAlgebra[F]) {
     EitherT.fromOptionF(userDAO.get(id), UserNotFoundError)
   }
 
-  def logIn(loginModel: LoginModel)(implicit M: Monad[F]): EitherT[F, UserValidationError, JsonWebToken] = {
-    val userByNameOrByEmail: String => EitherT[F, UserNotFoundError.type, User] = userNameOrEmail =>
-      EitherT.fromOptionF(userDAO.findByName(userNameOrEmail), UserNotFoundError) orElse
-        EitherT.fromOptionF(userDAO.findByEmail(userNameOrEmail), UserNotFoundError)
+  def logIn(loginModel: LoginModel)(implicit M: Monad[F]): EitherT[F, IncorrectCredentials.type, JsonWebToken] = {
+    val userByNameOrByEmail: String => EitherT[F, IncorrectCredentials.type, User] = userNameOrEmail =>
+      EitherT.fromOptionF(userDAO.findByName(userNameOrEmail), IncorrectCredentials) orElse
+        EitherT.fromOptionF(userDAO.findByEmail(userNameOrEmail), IncorrectCredentials)
 
-    val validatePassword: (String, Password) => EitherT[F, UserValidationError, Unit] = (plainPassword, hashedPassword) => {
+    val validatePassword: (String, Password) => EitherT[F, IncorrectCredentials.type, Unit] = (plainPassword, hashedPassword) => {
       if (PasswordService.compare(plainPassword, hashedPassword)) {
         EitherT.rightT(())
       } else {
@@ -35,7 +35,7 @@ class AuthService[F[_]](userDAO: UserDAOAlgebra[F]) {
       user <- userByNameOrByEmail(loginModel.userNameOrEmail)
       _ <- validatePassword(loginModel.password, user.password)
       userInfo = user.buildUserInfo
-      token <- EitherT.fromOption(userInfo.map(info => JwtAuth.decodeJwt(info)), UserNotFoundError: UserValidationError)
+      token <- EitherT.fromOption(userInfo.map(info => JwtAuth.decodeJwt(info)), IncorrectCredentials)
     } yield token
   }
 

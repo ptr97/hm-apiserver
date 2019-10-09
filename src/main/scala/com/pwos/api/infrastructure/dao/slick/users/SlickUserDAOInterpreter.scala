@@ -18,25 +18,27 @@ import scala.concurrent.ExecutionContext
 final class SlickUserDAOInterpreter(implicit ec: ExecutionContext) extends UserDAOAlgebra[DBIO] {
   val users: TableQuery[UserTable] = TableQuery[UserTable]
 
+  private def activeUsers = users filter (_.banned === false) filter (_.deleted === false)
+
   override def create(user: User): DBIO[User] = {
     users returning users
       .map(_.id) into((user, id) => user.copy(id = id.some)) += user
   }
 
   override def get(id: Long): DBIO[Option[User]] = {
-    users.filter(_.id === id).result.headOption
+    activeUsers.filter(_.id === id).result.headOption
   }
 
   override def get(ids: List[Long]): DBIO[List[User]] = {
-    users.filter(_.id inSet ids).result.map(_.toList)
+    activeUsers.filter(_.id inSet ids).result.map(_.toList)
   }
 
   override def findByName(name: String): DBIO[Option[User]] = {
-    users.filter(_.username === name).result.headOption
+    activeUsers.filter(_.username === name).result.headOption
   }
 
   override def findByEmail(email: String): DBIO[Option[User]] = {
-    users.filter(_.email === email).result.headOption
+    activeUsers.filter(_.email === email).result.headOption
   }
 
   override def update(user: User): DBIO[Option[User]] = {
@@ -52,10 +54,10 @@ final class SlickUserDAOInterpreter(implicit ec: ExecutionContext) extends UserD
   override def list(queryParameters: QueryParameters, pagingRequest: PagingRequest): DBIO[PaginatedResult[User]] = {
 
     val usersWithSearch: Query[UserTable, User, Seq] = queryParameters.search map { searchTerm: String =>
-      users filter { user: UserTable =>
+      activeUsers filter { user: UserTable =>
         user.username.like(s"%$searchTerm%") || user.email.like(s"%$searchTerm%")
       }
-    } getOrElse users
+    } getOrElse activeUsers
 
     val usersWithFilter: Query[UserTable, User, Seq] = queryParameters.filterBy map { filters: Map[String, String] =>
       val maybeFilterByBannedStatus: Option[Boolean] = filters.get("banned").flatMap {
