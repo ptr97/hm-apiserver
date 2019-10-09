@@ -4,9 +4,11 @@ import cats.Monad
 import cats.data.EitherT
 import cats.implicits._
 import com.pwos.api.domain.HelloMountainsError._
+import com.pwos.api.domain.authentication.AuthValidation
+import com.pwos.api.domain.users.UserInfo
 
 
-final class PlaceValidationInterpreter[F[_] : Monad](placeDAO: PlaceDAOAlgebra[F]) extends PlaceValidationAlgebra[F] {
+final class PlaceValidationInterpreter[F[_] : Monad](placeDAO: PlaceDAOAlgebra[F]) extends PlaceValidationAlgebra[F] with AuthValidation {
 
   override def doesNotExists(place: Place): EitherT[F, PlaceAlreadyExistsError, Unit] = EitherT {
     placeDAO.findByName(place.name).map {
@@ -19,6 +21,9 @@ final class PlaceValidationInterpreter[F[_] : Monad](placeDAO: PlaceDAOAlgebra[F
     EitherT.fromOptionF(placeDAO.get(placeId), PlaceNotFoundError).map(_ => ())
   }
 
+  override def validateAdminAccess(userInfo: UserInfo): Either[PlacePrivilegeError.type, Unit] = {
+    super.validateAdminAccess[PlacePrivilegeError.type](userInfo)(PlacePrivilegeError)
+  }
 }
 
 object PlaceValidationInterpreter {

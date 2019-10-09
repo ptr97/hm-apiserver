@@ -2,6 +2,7 @@ package com.pwos.api.infrastructure.http
 
 import akka.http.scaladsl.server.Directives._
 import akka.http.scaladsl.server.Route
+import com.pwos.api.domain.HelloMountainsError._
 import com.pwos.api.domain.places.Place
 import com.pwos.api.domain.places.PlaceService
 import com.pwos.api.domain.places.PlaceUpdateModel
@@ -25,12 +26,16 @@ class PlaceController(placeService: PlaceService[DBIO])(implicit ec: ExecutionCo
 
 
   def addPlace: Route = path(v1 / PLACES) {
-    authorizedPost(UserRole.Admin) { _ =>
+    authorizedPost(UserRole.Admin) { userInfo =>
       entity(as[Place]) { place: Place =>
         complete {
-          placeService.create(place).value.unsafeRun map {
+          placeService.create(userInfo, place).value.unsafeRun map {
             case Right(createdPlace) => HttpOps.created(createdPlace)
-            case Left(placeAlreadyExistsError) => HttpOps.badRequest(placeAlreadyExistsError)
+            case Left(placeError) => placeError match {
+              case placeError: PlaceAlreadyExistsError => HttpOps.badRequest(placeError)
+              case placeError: PlacePrivilegeError.type => HttpOps.badRequest(placeError)
+              case _ => HttpOps.internalServerError()
+            }
           }
         }
       }
@@ -49,12 +54,16 @@ class PlaceController(placeService: PlaceService[DBIO])(implicit ec: ExecutionCo
   }
 
   def updatePlace: Route = path(v1 / PLACES / LongNumber) { placeId: Long =>
-    authorizedPut(UserRole.Admin) { _ =>
+    authorizedPut(UserRole.Admin) { userInfo =>
       entity(as[PlaceUpdateModel]) { placeUpdateModel: PlaceUpdateModel =>
         complete {
-          placeService.update(placeId, placeUpdateModel).value.unsafeRun map {
+          placeService.update(userInfo, placeId, placeUpdateModel).value.unsafeRun map {
             case Right(updatedPlace) => HttpOps.ok(updatedPlace)
-            case Left(placeNotFoundError) => HttpOps.notFound(placeNotFoundError)
+            case Left(placeError) => placeError match {
+              case placeError: PlaceNotFoundError.type => HttpOps.badRequest(placeError)
+              case placeError: PlacePrivilegeError.type => HttpOps.badRequest(placeError)
+              case _ => HttpOps.internalServerError()
+            }
           }
         }
       }
@@ -62,12 +71,15 @@ class PlaceController(placeService: PlaceService[DBIO])(implicit ec: ExecutionCo
   }
 
   def deletePlace: Route = path(v1 / PLACES / LongNumber) { placeId: Long =>
-    authorizedDelete(UserRole.Admin) { _ =>
+    authorizedDelete(UserRole.Admin) { userInfo =>
       complete {
-        placeService.delete(placeId).value.unsafeRun map {
+        placeService.delete(userInfo, placeId).value.unsafeRun map {
           case Right(true) => HttpOps.ok("Place deleted")
-          case Right(false) => HttpOps.internalServerError("Something went wrong")
-          case Left(placeNotFoundError) => HttpOps.notFound(placeNotFoundError)
+          case Left(placeError) => placeError match {
+            case placeError: PlaceNotFoundError.type => HttpOps.badRequest(placeError)
+            case placeError: PlacePrivilegeError.type => HttpOps.badRequest(placeError)
+            case _ => HttpOps.internalServerError()
+          }
         }
       }
     }

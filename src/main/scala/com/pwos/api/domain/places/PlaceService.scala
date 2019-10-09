@@ -3,11 +3,13 @@ package com.pwos.api.domain.places
 import cats.Monad
 import cats.data.EitherT
 import com.pwos.api.domain.HelloMountainsError._
+import com.pwos.api.domain.users.UserInfo
 
 
 class PlaceService[F[_] : Monad](placeDAO: PlaceDAOAlgebra[F], placeValidation: PlaceValidationAlgebra[F]) {
 
-  def create(place: Place): EitherT[F, PlaceAlreadyExistsError, Place] = for {
+  def create(userInfo: UserInfo, place: Place): EitherT[F, PlaceValidationError, Place] = for {
+    _ <- EitherT(Monad[F].pure(placeValidation.validateAdminAccess(userInfo)))
     _ <- placeValidation.doesNotExists(place)
     newPlace <- EitherT.liftF(placeDAO.create(place))
   } yield newPlace
@@ -15,7 +17,7 @@ class PlaceService[F[_] : Monad](placeDAO: PlaceDAOAlgebra[F], placeValidation: 
   def get(id: Long): EitherT[F, PlaceNotFoundError.type, Place] =
     EitherT.fromOptionF(placeDAO.get(id), PlaceNotFoundError)
 
-  def update(id: Long, placeUpdateModel: PlaceUpdateModel): EitherT[F, PlaceNotFoundError.type, Place] = {
+  def update(userInfo: UserInfo, placeId: Long, placeUpdateModel: PlaceUpdateModel): EitherT[F, PlaceValidationError, Place] = {
     type PlaceUpdate = Place => Option[Place]
 
     val updateName: PlaceUpdate = place => placeUpdateModel.name.map(name => place.copy(name = name))
@@ -30,17 +32,21 @@ class PlaceService[F[_] : Monad](placeDAO: PlaceDAOAlgebra[F], placeValidation: 
     }
 
     for {
-      _ <- placeValidation.exists(id)
-      placeToUpdate <- get(id)
+      _ <- EitherT(Monad[F].pure(placeValidation.validateAdminAccess(userInfo)))
+      _ <- placeValidation.exists(placeId)
+      placeToUpdate <- get(placeId)
       updatedPlace = updatePlaceData(placeToUpdate)
-      placeUpdateResult <- EitherT.fromOptionF(placeDAO.update(updatedPlace), PlaceNotFoundError)
+      placeUpdateResult <- EitherT.fromOptionF(placeDAO.update(updatedPlace), PlaceNotFoundError: PlaceValidationError)
     } yield placeUpdateResult
   }
 
-  def delete(id: Long): EitherT[F, PlaceNotFoundError.type, Boolean] = for {
-    _ <- placeValidation.exists(id)
-    deletedPlace <- EitherT.liftF(placeDAO.delete(id))
-  } yield deletedPlace
+  def delete(userInfo: UserInfo, placeId: Long): EitherT[F, PlaceValidationError, Boolean] = {
+    for {
+      _ <- EitherT(Monad[F].pure(placeValidation.validateAdminAccess(userInfo)))
+      _ <- placeValidation.exists(placeId)
+      deletedPlace <- EitherT.liftF(placeDAO.delete(placeId))
+    } yield deletedPlace
+  }
 
   def list(): F[List[Place]] = {
     placeDAO.all
