@@ -38,3 +38,8 @@ class SlickTagDAOInterpreter(implicit ec: ExecutionContext) extends TagDAOAlgebr
     tags.filter(_.name === tagName).result.headOption
   }
 }
+
+object SlickTagDAOInterpreter {
+  def apply(implicit ec: ExecutionContext): SlickTagDAOInterpreter =
+    new SlickTagDAOInterpreter()
+}

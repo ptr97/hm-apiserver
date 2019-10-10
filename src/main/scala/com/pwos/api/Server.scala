@@ -10,6 +10,9 @@ import com.pwos.api.domain.authentication.AuthService
 import com.pwos.api.domain.opinions.OpinionService
 import com.pwos.api.domain.opinions.OpinionValidationAlgebra
 import com.pwos.api.domain.opinions.OpinionValidationInterpreter
+import com.pwos.api.domain.opinions.tags.TagService
+import com.pwos.api.domain.opinions.tags.TagValidationAlgebra
+import com.pwos.api.domain.opinions.tags.TagValidationInterpreter
 import com.pwos.api.domain.places.PlaceService
 import com.pwos.api.domain.places.PlaceValidationInterpreter
 import com.pwos.api.domain.users.UserService
@@ -17,11 +20,13 @@ import com.pwos.api.domain.users.UserValidationInterpreter
 import com.pwos.api.infrastructure.dao.slick.DBIOMonad._
 import com.pwos.api.infrastructure.dao.slick.opinions.SlickOpinionDAOInterpreter
 import com.pwos.api.infrastructure.dao.slick.opinions.reports.SlickReportDAOInterpreter
+import com.pwos.api.infrastructure.dao.slick.opinions.tags.SlickTagDAOInterpreter
 import com.pwos.api.infrastructure.dao.slick.places.SlickPlaceDAOInterpreter
 import com.pwos.api.infrastructure.dao.slick.users.SlickUserDAOInterpreter
 import com.pwos.api.infrastructure.http.HttpOps
 import com.pwos.api.infrastructure.http.OpinionController
 import com.pwos.api.infrastructure.http.PlaceController
+import com.pwos.api.infrastructure.http.TagController
 import com.pwos.api.infrastructure.http.UserController
 import com.pwos.api.infrastructure.http.authentication.AuthController
 import slick.dbio.DBIO
@@ -61,6 +66,7 @@ object Server {
       authRoutes ~
       userRoutes ~
       placeRoutes ~
+      tagRoutes ~
       opinionRoutes
     }
   }
@@ -89,6 +95,15 @@ object Server {
     lazy val placeController: PlaceController = PlaceController(placeService)
 
     placeController.placeRoutes
+  }
+
+  private def tagRoutes(implicit ec: ExecutionContext, database: Database): Route = {
+    lazy val tagDAO: SlickTagDAOInterpreter = SlickTagDAOInterpreter(ec)
+    lazy val tagValidation: TagValidationAlgebra[DBIO] = TagValidationInterpreter(tagDAO)
+    lazy val tagService: TagService[DBIO] = TagService(tagDAO, tagValidation)
+    lazy val tagController: TagController = TagController(tagService)
+
+    tagController.tagRoutes
   }
 
   private def opinionRoutes(implicit ec: ExecutionContext, database: Database): Route = {
