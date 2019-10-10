@@ -49,6 +49,7 @@ class OpinionController(opinionService: OpinionService[DBIO])(implicit ec: Execu
           case Left(opinionError) => opinionError match {
             case opinionNotFoundError: OpinionNotFoundError.type => HttpOps.notFound(opinionNotFoundError)
             case opinionPrivilegeError: OpinionPrivilegeError.type => HttpOps.forbidden(opinionPrivilegeError)
+            case _ => HttpOps.internalServerError()
           }
         }
       }
@@ -63,6 +64,7 @@ class OpinionController(opinionService: OpinionService[DBIO])(implicit ec: Execu
           case Left(opinionError) => opinionError match {
             case opinionNotFoundError: OpinionNotFoundError.type => HttpOps.notFound(opinionNotFoundError)
             case opinionPrivilegeError: OpinionPrivilegeError.type => HttpOps.forbidden(opinionPrivilegeError)
+            case _ => HttpOps.internalServerError()
           }
         }
       }
@@ -101,6 +103,7 @@ class OpinionController(opinionService: OpinionService[DBIO])(implicit ec: Execu
           case Left(opinionError) => opinionError match {
             case opinionNotFoundError: OpinionNotFoundError.type => HttpOps.notFound(opinionNotFoundError)
             case opinionDeletePrivilegeError: OpinionOwnershipError.type => HttpOps.forbidden(opinionDeletePrivilegeError)
+            case _ => HttpOps.internalServerError()
           }
         }
       }
@@ -116,6 +119,7 @@ class OpinionController(opinionService: OpinionService[DBIO])(implicit ec: Execu
             case Left(opinionValidationError) => opinionValidationError match {
               case opinionNotFoundError: OpinionNotFoundError.type => HttpOps.notFound(opinionNotFoundError)
               case opinionDeletePrivilegeError: OpinionOwnershipError.type => HttpOps.forbidden(opinionDeletePrivilegeError)
+              case _ => HttpOps.internalServerError()
             }
           }
         }

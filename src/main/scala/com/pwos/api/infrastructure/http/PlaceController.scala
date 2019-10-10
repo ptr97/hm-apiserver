@@ -75,6 +75,7 @@ class PlaceController(placeService: PlaceService[DBIO])(implicit ec: ExecutionCo
       complete {
         placeService.delete(userInfo, placeId).value.unsafeRun map {
           case Right(true) => HttpOps.ok("Place deleted")
+          case Right(false) => HttpOps.internalServerError()
           case Left(placeError) => placeError match {
             case placeError: PlaceNotFoundError.type => HttpOps.badRequest(placeError)
             case placeError: PlacePrivilegeError.type => HttpOps.badRequest(placeError)
