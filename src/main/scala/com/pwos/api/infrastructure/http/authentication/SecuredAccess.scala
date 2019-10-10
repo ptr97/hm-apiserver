@@ -4,7 +4,6 @@ import akka.http.scaladsl.server.AuthorizationFailedRejection
 import akka.http.scaladsl.server.Directives._
 import akka.http.scaladsl.server._
 import cats.data.OptionT
-import com.pwos.api.domain.authentication.AuthService
 import com.pwos.api.domain.users.User
 import com.pwos.api.domain.users.UserInfo
 import com.pwos.api.domain.users.UserRole
