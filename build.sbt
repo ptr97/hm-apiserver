@@ -23,6 +23,8 @@ lazy val bcryptVersion            = "0.4"
 libraryDependencies ++= Seq(
   "com.typesafe.akka"       %%  "akka-http"             % akkaHttpVersion,
   "com.typesafe.akka"       %%  "akka-stream"           % akkaVersion,
+  "com.typesafe.akka"       %%  "akka-stream-testkit"   % akkaVersion,
+  "com.typesafe.akka"       %%  "akka-http-testkit"     % akkaHttpVersion,
   "de.heikoseeberger"       %%  "akka-http-circe"       % akkaHttpCirceVersion,
 
   "org.typelevel"           %%  "cats-core"             % catsVersion,
