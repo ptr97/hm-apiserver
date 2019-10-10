@@ -1,6 +1,5 @@
 package com.pwos.api.domain.authentication
 
-import cats.Functor
 import cats.Monad
 import cats.data.EitherT
 import com.pwos.api.domain.HelloMountainsError._
