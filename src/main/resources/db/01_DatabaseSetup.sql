@@ -2,25 +2,25 @@
 
 CREATE TABLE PLACE (
     ID bigint(20) NOT NULL AUTO_INCREMENT,
-    NAME varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
+    NAME varchar(255) NOT NULL,
     LATITUDE double NOT NULL,
     LONGITUDE double NOT NULL,
     ELEVATION double NOT NULL,
     PRIMARY KEY (ID),
-    CONSTRAINT cannot_duplicate_place_name UNIQUE KEY(NAME),
-    CONSTRAINT cannot_duplicate_place_cords UNIQUE KEY(LATITUDE, LONGITUDE)
+    CONSTRAINT cannot_duplicate_place_name UNIQUE KEY (NAME),
+    CONSTRAINT cannot_duplicate_place_cords UNIQUE KEY (LATITUDE, LONGITUDE)
 );
 
 CREATE TABLE USER (
     ID bigint(20) NOT NULL AUTO_INCREMENT,
-    USERNAME varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
-    EMAIL varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
-    PASSWORD varchar(512) COLLATE utf8mb4_unicode_ci NOT NULL,
+    USERNAME varchar(255) NOT NULL,
+    EMAIL varchar(255) NOT NULL,
+    PASSWORD varchar(512) NOT NULL,
     ROLE ENUM('user', 'admin') NOT NULL DEFAULT 'user',
     BANNED boolean NOT NULL DEFAULT false,
     PRIMARY KEY (ID),
-    CONSTRAINT cannot_duplicate_username UNIQUE KEY(USERNAME),
-    CONSTRAINT cannot_duplicate_email UNIQUE KEY(EMAIL)
+    CONSTRAINT cannot_duplicate_username UNIQUE KEY (USERNAME),
+    CONSTRAINT cannot_duplicate_email UNIQUE KEY (EMAIL)
 );
 
 CREATE TABLE OPINION (
