@@ -3,9 +3,12 @@ package com.pwos.api.infastructure
 import akka.http.scaladsl.model.headers.RawHeader
 import cats.data.OptionT
 import com.pwos.api.domain.authentication.AuthService
+import com.pwos.api.domain.opinions.Opinion
 import com.pwos.api.domain.opinions.OpinionService
 import com.pwos.api.domain.opinions.OpinionValidationAlgebra
 import com.pwos.api.domain.opinions.OpinionValidationInterpreter
+import com.pwos.api.domain.opinions.reports.Report
+import com.pwos.api.domain.opinions.reports.ReportCategory
 import com.pwos.api.domain.opinions.tags.Tag
 import com.pwos.api.domain.opinions.tags.TagCategory
 import com.pwos.api.domain.opinions.tags.TagService
@@ -62,6 +65,22 @@ object Mocks {
     val tag3 = Tag("Tag 3", TagCategory.SUBSOIL, id = Some(3L))
     val tag4Disabled = Tag("Tag 3", TagCategory.SUBSOIL, enabled = false, id = Some(4L))
   }
+
+  object Opinions {
+    val opinion1 = Opinion(Places.place1.id.get, Users.user1.id.get, Some("Opinion 1 Body"), id = Some(1L))
+    val opinion2 = Opinion(Places.place1.id.get, Users.user1.id.get, Some("Opinion 2 Body"), id = Some(2L))
+    val opinion3 = Opinion(Places.place1.id.get, Users.user1.id.get, Some("Opinion 3 Body"), id = Some(3L))
+    val opinion4 = Opinion(Places.place1.id.get, Users.user1.id.get, Some("Opinion 4 Body"), id = Some(4L))
+
+    val opinion5ForPlace2 = Opinion(Places.place2.id.get, Users.user2.id.get, Some("Opinion 5 Body"), id = Some(5L))
+    val opinion6ForPlace2 = Opinion(Places.place2.id.get, Users.user2.id.get, Some("Opinion 6 Body"), id = Some(6L))
+  }
+
+  object Reports {
+    val report1 = Report(Users.user1.id.get, Opinions.opinion1.id.get, Some("Report 1 Body"), ReportCategory.MISLEADING, id = Some(1L))
+    val report2 = Report(Users.user2.id.get, Opinions.opinion1.id.get, Some("Report 2 Body"), ReportCategory.VULGAR, id = Some(2L))
+  }
+
 
   def createAdmin(admin: User, userService: UserService[DBIO], userDAO: SlickUserDAOInterpreter)(implicit ec: ExecutionContext, db: Database): String = {
     val createAdminModel = CreateUserModel(admin.userName, admin.email, admin.password, admin.password)
