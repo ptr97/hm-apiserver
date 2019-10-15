@@ -14,7 +14,7 @@ class TagTable(tag: Tag) extends Table[HmTag](tag, "TAG") {
 
   def id: Rep[Long]                             = column[Long]("ID", O.PrimaryKey, O.AutoInc)
   def name: Rep[String]                         = column[String]("NAME")
-  def tagCategory: Rep[TagCategory.Value]       = column[TagCategory.Value]("REPORT_CATEGORY")
+  def tagCategory: Rep[TagCategory.Value]       = column[TagCategory.Value]("TAG_CATEGORY")
   def enabled: Rep[Boolean]                     = column[Boolean]("ENABLED")
 
 
