@@ -77,9 +77,8 @@ package object http {
     }
 
     private def clientErrorResponseNel[T <: NonEmptyList[HelloMountainsError] : Encoder](value: T, statusCode: StatusCode = StatusCodes.BadRequest): HttpResponse = {
-      logResponse(value, statusCode)
-
       val error: NonEmptyList[String] = value.map(_.message)
+      logResponse(error, statusCode)
 
       HttpResponse(status = statusCode,
         entity = HttpEntity(`application/json`, ErrorResponse(error).toJson),

@@ -95,7 +95,7 @@ final class SlickUserDAOInterpreter(implicit ec: ExecutionContext) extends UserD
       case (_, _) => usersWithFilter.sortBy(_.id.asc)
     }
 
-    val allUsersCount: DBIO[Int] = users.length.result
+    val allUsersCount: DBIO[Int] = usersWithFilter.length.result
 
     for {
       usersResult <- sortedUsers.paged(pagingRequest).result

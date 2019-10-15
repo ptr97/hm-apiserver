@@ -42,7 +42,10 @@ object Mocks {
 
   object Users {
     val admin: User = User("admin", "admin@hm.com", "Password123", UserRole.Admin, banned = false, Some(1L))
-    val user: User = User("Test User", "test@test.com", "TestPass123", UserRole.User, banned = false, Some(2L))
+    val user1: User = User("Test User 1", "test1@test.com", "TestPass123", UserRole.User, banned = false, Some(2L))
+    val user2: User = User("Test User 2", "test2@test.com", "TestPass123", UserRole.User, banned = false, Some(3L))
+    val user3: User = User("Test User 3", "test3@test.com", "TestPass123", UserRole.User, banned = false, Some(4L))
+    val user4: User = User("Test User 4", "test4@test.com", "TestPass123", UserRole.User, banned = false, Some(5L))
   }
 
   object Places {

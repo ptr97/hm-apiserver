@@ -34,7 +34,7 @@ class PlaceIntegrationSpec extends FunSpec with Matchers with ScalatestRouteTest
   private def prepareContext: (SlickPlaceDAOInterpreter, PlaceController) = {
     val (userDAO, userService, _) = userResources
     adminToken = createAdmin(Mocks.Users.admin, userService, userDAO)
-    userToken = createUser(Mocks.Users.user, userService, userDAO)
+    userToken = createUser(Mocks.Users.user1, userService, userDAO)
     placeResources
   }
 
