@@ -169,8 +169,6 @@ class PlaceIntegrationSpec extends FunSpec with Matchers with ScalatestRouteTest
         response.data shouldBe List(place1FromDb, place2FromDb, place3FromDb)
       }
     }
-
-
   }
 
 }
