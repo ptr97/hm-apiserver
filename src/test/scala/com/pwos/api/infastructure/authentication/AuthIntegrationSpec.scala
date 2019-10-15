@@ -47,7 +47,7 @@ class AuthIntegrationSpec extends FunSpec with Matchers with ScalatestRouteTest 
     DatabaseManager.cleanDatabase(db)
   }
 
-  describe("Logging in - /v1/logIn") {
+  describe("Logging in - POST /v1/logIn") {
     it("should log in Admin by login") {
       val authController = prepareContext
       val logInModel = LoginModel(Users.admin.userName, Users.admin.password)
