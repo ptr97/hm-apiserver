@@ -127,7 +127,7 @@ class OpinionController(opinionService: OpinionService[DBIO])(implicit ec: Execu
     }
   }
 
-  def reportCategories: Route = path(v1 / REPORTS) {
+  def reportCategories: Route = path(v1 / OPINIONS / REPORTS) {
     authorizedGet(UserRole.User) { _ =>
       complete {
         opinionService.reportCategories().unsafeRun map (HttpOps.ok(_))
