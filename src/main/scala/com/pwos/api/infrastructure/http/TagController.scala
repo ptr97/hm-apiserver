@@ -66,7 +66,7 @@ class TagController(tagService: TagService[DBIO])(implicit ec: ExecutionContext,
   }
 
   def updateTagStatus: Route = path(v1 / TAGS / LongNumber) { tagId =>
-    authorizedPut(UserRole.User) { userInfo =>
+    authorizedPut(UserRole.Admin) { userInfo =>
       entity(as[UpdateTagModel]) { updateTagModel =>
         complete {
           tagService.updateTag(userInfo, tagId, updateTagModel).value.unsafeRun map {
