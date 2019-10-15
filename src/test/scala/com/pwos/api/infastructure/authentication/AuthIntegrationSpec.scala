@@ -7,7 +7,6 @@ import akka.http.scaladsl.model.StatusCodes
 import akka.http.scaladsl.testkit.ScalatestRouteTest
 import com.pwos.api.config.Config
 import com.pwos.api.domain.HelloMountainsError.IncorrectCredentials
-import com.pwos.api.domain.HelloMountainsError.UserNotFoundError
 import com.pwos.api.domain.users.UserModels.LoginModel
 import com.pwos.api.infastructure.DatabaseManager
 import com.pwos.api.infastructure.Mocks._
@@ -32,7 +31,7 @@ class AuthIntegrationSpec extends FunSpec with Matchers with ScalatestRouteTest 
   implicit val db: Database = config.database
 
   private def prepareContext: AuthController = {
-    val (userDAO, userService, userController) = userResources
+    val (userDAO, userService, _) = userResources
     createAdmin(Users.admin, userService, userDAO)
     createUser(Users.user1, userService, userDAO)
 
