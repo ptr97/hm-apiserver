@@ -13,7 +13,6 @@ import com.pwos.api.domain.users.User
 import com.pwos.api.domain.users.UserModels._
 import com.pwos.api.domain.users.UserView
 import com.pwos.api.infastructure.DatabaseManager
-import com.pwos.api.infastructure.Mocks
 import com.pwos.api.infastructure.Mocks._
 import com.pwos.api.infrastructure.dao.slick.users.SlickUserDAOInterpreter
 import com.pwos.api.infrastructure.http.HttpResponses.SuccessResponse
@@ -40,8 +39,8 @@ class UserIntegrationSpec extends FunSpec with Matchers with ScalatestRouteTest 
 
   private def prepareContext: UserController= {
     val (userDAO, userService, userController) = userResources
-    adminToken = createAdmin(Mocks.Users.admin, userService, userDAO)
-    user1Token = createUser(Mocks.Users.user1, userService, userDAO)
+    adminToken = createAdmin(Users.admin, userService, userDAO)
+    user1Token = createUser(Users.user1, userService, userDAO)
     userController
   }
 
@@ -224,11 +223,11 @@ class UserIntegrationSpec extends FunSpec with Matchers with ScalatestRouteTest 
 
     def prepareContextForListing: (SlickUserDAOInterpreter, UserController) = {
       val (userDAO, userService, userController) = userResources
-      adminToken = createAdmin(Mocks.Users.admin, userService, userDAO)
-      user1Token = createUser(Mocks.Users.user1, userService, userDAO)
-      createUser(Mocks.Users.user2, userService, userDAO)
-      createUser(Mocks.Users.user3, userService, userDAO)
-      createUser(Mocks.Users.user4, userService, userDAO)
+      adminToken = createAdmin(Users.admin, userService, userDAO)
+      user1Token = createUser(Users.user1, userService, userDAO)
+      createUser(Users.user2, userService, userDAO)
+      createUser(Users.user3, userService, userDAO)
+      createUser(Users.user4, userService, userDAO)
       (userDAO, userController)
     }
 
