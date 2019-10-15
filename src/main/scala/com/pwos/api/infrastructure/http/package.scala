@@ -70,7 +70,7 @@ package object http {
     }
 
     private def clientErrorResponse[T <: HelloMountainsError : Encoder](value: T, statusCode: StatusCode = StatusCodes.BadRequest): HttpResponse = {
-      logResponse(value, statusCode)
+      logResponse(value.message, statusCode)
       HttpResponse(status = statusCode,
         entity = HttpEntity(`application/json`, ErrorResponse(value.message).toJson),
         headers = List(RawHeader("Access-Control-Allow-Origin", "*")))
@@ -100,6 +100,8 @@ package object http {
     def badRequest[T <: HelloMountainsError : Encoder](value: T): HttpResponse = clientErrorResponse(value)
 
     def badRequestNel[T <: NonEmptyList[HelloMountainsError] : Encoder](value: T): HttpResponse = clientErrorResponseNel(value)
+
+    def unauthorized[T <: HelloMountainsError : Encoder](value: T): HttpResponse = clientErrorResponse(value, StatusCodes.Unauthorized)
 
     def forbidden[T <: HelloMountainsError : Encoder](value: T): HttpResponse = clientErrorResponse(value, StatusCodes.Forbidden)
 

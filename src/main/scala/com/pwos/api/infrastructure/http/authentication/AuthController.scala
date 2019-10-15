@@ -20,13 +20,15 @@ class AuthController(authService: AuthService[DBIO])(implicit ec: ExecutionConte
 
   val authRoutes: Route = logIn
 
-  def logIn: Route = path(v1 / "logIn") {
+  import AuthController.LOG_IN
+
+  def logIn: Route = path(v1 / LOG_IN) {
     post {
       entity(as[LoginModel]) { loginModel: LoginModel =>
         complete {
           authService.logIn(loginModel).value.unsafeRun map {
             case Right(jwt) => HttpOps.ok(jwt)
-            case Left(userNotFoundError) => HttpOps.badRequest(userNotFoundError)
+            case Left(incorrectCredentials) => HttpOps.unauthorized(incorrectCredentials)
           }
         }
       }
@@ -36,6 +38,8 @@ class AuthController(authService: AuthService[DBIO])(implicit ec: ExecutionConte
 }
 
 object AuthController {
+  val LOG_IN = "logIn"
+
   def apply(authService: AuthService[DBIO])(implicit ec: ExecutionContext, database: Database): AuthController =
     new AuthController(authService)
 }
