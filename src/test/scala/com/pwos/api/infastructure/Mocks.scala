@@ -6,6 +6,8 @@ import com.pwos.api.domain.authentication.AuthService
 import com.pwos.api.domain.opinions.OpinionService
 import com.pwos.api.domain.opinions.OpinionValidationAlgebra
 import com.pwos.api.domain.opinions.OpinionValidationInterpreter
+import com.pwos.api.domain.opinions.tags.Tag
+import com.pwos.api.domain.opinions.tags.TagCategory
 import com.pwos.api.domain.opinions.tags.TagService
 import com.pwos.api.domain.opinions.tags.TagValidationAlgebra
 import com.pwos.api.domain.opinions.tags.TagValidationInterpreter
@@ -52,6 +54,13 @@ object Mocks {
     val place1: Place = Place("Place One", 50.067106, 19.913587, 203, Some(1L))
     val place2: Place = Place("Place Two", 37.7825062, 20.8950319, 13, Some(2L))
     val place3: Place = Place("Place Three", -0.617644, 73.093730, 7, Some(3L))
+  }
+
+  object Tags {
+    val tag1 = Tag("Tag 1", TagCategory.THREATS, id = Some(1L))
+    val tag2 = Tag("Tag 2", TagCategory.EQUIPMENT, id = Some(2L))
+    val tag3 = Tag("Tag 3", TagCategory.SUBSOIL, id = Some(3L))
+    val tag4Disabled = Tag("Tag 3", TagCategory.SUBSOIL, enabled = false, id = Some(4L))
   }
 
   def createAdmin(admin: User, userService: UserService[DBIO], userDAO: SlickUserDAOInterpreter)(implicit ec: ExecutionContext, db: Database): String = {
