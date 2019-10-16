@@ -63,7 +63,7 @@ object Mocks {
     val tag1 = Tag("Tag 1", TagCategory.THREATS, id = Some(1L))
     val tag2 = Tag("Tag 2", TagCategory.EQUIPMENT, id = Some(2L))
     val tag3 = Tag("Tag 3", TagCategory.SUBSOIL, id = Some(3L))
-    val tag4Disabled = Tag("Tag 3", TagCategory.SUBSOIL, enabled = false, id = Some(4L))
+    val tag4Disabled = Tag("Tag 4 Disabled", TagCategory.SUBSOIL, enabled = false, id = Some(4L))
   }
 
   object Opinions {

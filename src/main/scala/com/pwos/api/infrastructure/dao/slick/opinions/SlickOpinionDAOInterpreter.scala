@@ -7,11 +7,13 @@ import com.pwos.api.domain.PagingRequest
 import com.pwos.api.domain.QueryParameters
 import com.pwos.api.domain.opinions.Opinion
 import com.pwos.api.domain.opinions.OpinionDAOAlgebra
+import com.pwos.api.domain.opinions.tags.TagCategory
 import com.pwos.api.domain.opinions.tags.{Tag => HmTag}
 import com.pwos.api.infrastructure.dao.slick.SlickImplicits._
-import com.pwos.api.infrastructure.dao.slick.opinions.tags.TagTable
 import slick.dbio.DBIO
+import slick.jdbc.GetResult
 import slick.jdbc.MySQLProfile.api._
+import slick.jdbc.PositionedResult
 import slick.lifted.TableQuery
 
 import scala.concurrent.ExecutionContext
@@ -22,9 +24,7 @@ class SlickOpinionDAOInterpreter(implicit ec: ExecutionContext) extends OpinionD
 
   private val opinions: TableQuery[OpinionTable] = TableQuery[OpinionTable]
   private val opinionsTags: TableQuery[OpinionTagTable] = TableQuery[OpinionTagTable]
-  private val tags: TableQuery[TagTable] = TableQuery[TagTable]
   private val opinionsLikes: TableQuery[OpinionLikeTable] = TableQuery[OpinionLikeTable]
-
 
   private lazy val notDeletedOpinions = opinions filter (_.deleted === false)
   private lazy val activeOpinions = notDeletedOpinions filter (_.blocked === false)
@@ -72,24 +72,35 @@ class SlickOpinionDAOInterpreter(implicit ec: ExecutionContext) extends OpinionD
   }
 
   private def getOpinion(opinionId: Long, allowBlocked: Boolean): DBIO[Option[(Opinion, List[String], List[Long])]] = {
-    val opinionsBaseSet = if (allowBlocked) {
-      notDeletedOpinions
+    val activeOpinionClause: String = if (allowBlocked) {
+      ""
     } else {
-      activeOpinions
+      "and OPINION.BLOCKED = 0"
     }
 
-    val opinionsWithJoins: Query[(OpinionTable, Rep[Option[String]], Rep[Option[Long]]), (Opinion, Option[String], Option[Long]), Seq] = for {
-      (_, maybeOpinionTagTable) <- opinionsBaseSet filter (_.id === opinionId) joinLeft opinionsTags on (_.id === _.opinionId)
-      tagId = maybeOpinionTagTable.map(_.tagId)
-      (_, tagTable) <- opinionsTags filter (_.tagId === tagId) joinLeft tags on (_.tagId === _.id)
-      (opinionTable, opinionLikesTable) <- opinionsBaseSet filter (_.id === opinionId) joinLeft opinionsLikes on (_.id === _.opinionId)
-    } yield (opinionTable, tagTable.map(_.name), opinionLikesTable.map(_.userId))
+    val queryString =
+      s"""
+          select
+            OPINION.ID, OPINION.PLACE_ID, OPINION.AUTHOR_ID, OPINION.BODY, OPINION.REFERENCE_DATE, OPINION.LAST_MODIFIED, OPINION.CREATION_DATE, OPINION.BLOCKED, OPINION.DELETED,
+            TAG.ID, TAG.NAME, TAG.TAG_CATEGORY, TAG.ENABLED,
+            OPINION_LIKE.OPINION_ID, OPINION_LIKE.USER_ID
+          from OPINION
+          left join OPINION_TAG on OPINION_TAG.OPINION_ID = OPINION.ID
+          left join TAG on TAG.ID = OPINION_TAG.TAG_ID
+          left join OPINION_LIKE on OPINION_LIKE.OPINION_ID = OPINION.ID
+          where OPINION.ID = $opinionId and OPINION.DELETED = 0
+          $activeOpinionClause
+       """
 
-    opinionsWithJoins.result map { rows =>
-      val (opinions: Seq[Opinion], tagsNames: Seq[Option[String]], likedBy: Seq[Option[Long]]) = rows.unzip3
-      opinions.headOption map { opinion =>
-        (opinion, tagsNames.flatten.toList, likedBy.flatten.toList)
+
+    val opinionWithJoinsDBIO: DBIO[Vector[(Opinion, Option[HmTag], Option[OpinionLike])]] = sql"#$queryString".as[(Opinion, Option[HmTag], Option[OpinionLike])] {
+      GetResult { r: PositionedResult =>
+        (OpinionSlickMapper(r), TagSlickMapper(r), OpinionLikeSlickMapper(r))
       }
+    }
+
+    opinionWithJoinsDBIO map { opinionWithJoins =>
+      aggregateOpinions(opinionWithJoins).headOption
     }
   }
 
@@ -109,59 +120,122 @@ class SlickOpinionDAOInterpreter(implicit ec: ExecutionContext) extends OpinionD
   }
 
   override def listForPlace(placeId: Long, pagingRequest: PagingRequest): DBIO[PaginatedResult[(Opinion, List[String], List[Long])]] = {
-    val opinionsWithJoinsQuery = opinionsWithJoins(placeId.some)
+    val opinionsWithJoinsQuery: DBIO[Vector[(Opinion, Option[HmTag], Option[OpinionLike])]] = opinionsWithJoins(placeId.some)
 
     for {
-      opinionsResult <- opinionsWithJoinsQuery.paged(pagingRequest).result.map(aggregateOpinions)
-      totalCount <- opinionsWithJoinsQuery.length.result
+      opinionsResult <- opinionsWithJoinsQuery.map(aggregateOpinions)
+      pagedResult = opinionsResult.paged(pagingRequest)
+      totalCount = opinionsResult.length
     } yield {
-      PaginatedResult.build(opinionsResult, totalCount, pagingRequest)
+      PaginatedResult.build(pagedResult, totalCount, pagingRequest)
     }
   }
 
 
   override def listAll(queryParameters: QueryParameters, pagingRequest: PagingRequest): DBIO[PaginatedResult[(Opinion, List[String], List[Long])]] = {
-    val opinionsWithJoinsQuery = opinionsWithJoins(None)
+    val opinionsWithJoinsQuery: DBIO[Vector[(Opinion, Option[HmTag], Option[OpinionLike])]] = opinionsWithJoins(None)
 
-    val onlyBlocked = queryParameters.filterBy flatMap { filters: Map[String, String] =>
+    val onlyBlocked: Boolean = queryParameters.filterBy flatMap { filters: Map[String, String] =>
       filters.get("blocked") map {
         case "true" => true
         case _ => false
       }
     } getOrElse false
 
-    val filtered = opinionsWithJoinsQuery filter { case (opinion, _, _) =>
+    val filtered: DBIO[Vector[(Opinion, Option[HmTag], Option[OpinionLike])]] = opinionsWithJoinsQuery map (_.filter { case (opinion, _, _) =>
       opinion.blocked === onlyBlocked
-    }
+    })
 
     for {
-      opinionsResult <- filtered.paged(pagingRequest).result.map(aggregateOpinions)
-      totalCount <- filtered.length.result
+      opinionsResult <- filtered.map(aggregateOpinions)
+      pagedResult = opinionsResult.paged(pagingRequest)
+      totalCount = opinionsResult.length
     } yield {
-      PaginatedResult.build(opinionsResult, totalCount, pagingRequest)
+      PaginatedResult.build(pagedResult, totalCount, pagingRequest)
     }
   }
 
-  private def opinionsWithJoins(maybePlaceId: Option[Long]): Query[(OpinionTable, Rep[Option[TagTable]], Rep[Option[OpinionLikeTable]]), (Opinion, Option[HmTag], Option[OpinionLike]), Seq] = {
-    val opinionsForPlaceOrAll: Query[OpinionTable, Opinion, Seq] = maybePlaceId map { placeId =>
-      activeOpinions filter (_.placeId === placeId)
-    } getOrElse notDeletedOpinions
+  private def opinionsWithJoins(maybePlaceId: Option[Long]): DBIO[Vector[(Opinion, Option[HmTag], Option[OpinionLike])]] = {
 
-    val queryWithJoins = for {
-      (_, maybeOpinionTagTable) <- opinionsForPlaceOrAll joinLeft opinionsTags on (_.id === _.opinionId)
-      tagId = maybeOpinionTagTable.map(_.tagId)
-      (_, tagTable) <- opinionsTags filter (_.tagId === tagId) joinLeft tags on (_.tagId === _.id)
-      (opinionTable, opinionLikesTable) <- opinionsForPlaceOrAll joinLeft opinionsLikes on (_.id === _.opinionId)
-    } yield (opinionTable, tagTable, opinionLikesTable)
+    val maybePlaceIdWhereClause: String = maybePlaceId map { placeId =>
+      s"and OPINION.BLOCKED = 0 and OPINION.PLACE_ID = $placeId"
+    } getOrElse {
+      ""
+    }
 
-    queryWithJoins.sortBy(_._1.referenceDate.desc)
+    val queryString =
+      s"""
+          select
+            OPINION.ID, OPINION.PLACE_ID, OPINION.AUTHOR_ID, OPINION.BODY, OPINION.REFERENCE_DATE, OPINION.LAST_MODIFIED, OPINION.CREATION_DATE, OPINION.BLOCKED, OPINION.DELETED,
+            TAG.ID, TAG.NAME, TAG.TAG_CATEGORY, TAG.ENABLED,
+            OPINION_LIKE.OPINION_ID, OPINION_LIKE.USER_ID
+          from OPINION
+          left join OPINION_TAG on OPINION_TAG.OPINION_ID = OPINION.ID
+          left join TAG on TAG.ID = OPINION_TAG.TAG_ID
+          left join OPINION_LIKE on OPINION_LIKE.OPINION_ID = OPINION.ID
+          where OPINION.DELETED = 0
+          $maybePlaceIdWhereClause
+          order by OPINION.ID desc
+       """
+
+    sql"#$queryString".as[(Opinion, Option[HmTag], Option[OpinionLike])] {
+      GetResult { r: PositionedResult =>
+        (OpinionSlickMapper(r), TagSlickMapper(r), OpinionLikeSlickMapper(r))
+      }
+    }
   }
 
   private def aggregateOpinions(rows: Seq[(Opinion, Option[HmTag], Option[OpinionLike])]): List[(Opinion, List[String], List[Long])] = {
-    rows groupBy(_._1) map { case (opinion, seq) =>
+    val notSorted = rows groupBy (_._1) map { case (opinion, seq) =>
       (opinion, seq.flatMap(_._2).map(_.name).toList, seq.flatMap(_._3).map(_.userId).toList)
     } toList
+
+    notSorted.sortBy(_._1.id.get)(Ordering[Long].reverse)
   }
+
+  private def OpinionSlickMapper(r: PositionedResult): Opinion = {
+    Opinion(
+      id = r.nextLongOption,
+      placeId = r.nextLong,
+      authorId = r.nextLong,
+      body = r.nextStringOption,
+      referenceDate = r.<<,
+      lastModified = r.<<,
+      creationDate = r.<<,
+      blocked = r.nextBoolean,
+      deleted = r.nextBoolean,
+    )
+  }
+
+  private def TagSlickMapper(r: PositionedResult): Option[HmTag] = {
+    val maybeTagId: Option[Long] = r.nextLongOption
+    val maybeTagName: Option[String] = r.nextStringOption
+    val maybeTagCategoryName: Option[String] = r.nextStringOption
+    val maybeEnabled: Option[Boolean] = r.nextBooleanOption
+
+    for {
+      tagId <- maybeTagId
+      tagName <- maybeTagName
+      tagCategoryName <- maybeTagCategoryName
+      enabled <- maybeEnabled
+    } yield HmTag(
+      id = Some(tagId),
+      name = tagName,
+      tagCategory = TagCategory.withName(tagCategoryName),
+      enabled = enabled
+    )
+  }
+
+  private def OpinionLikeSlickMapper(r: PositionedResult): Option[OpinionLike] = {
+    val maybeOpinionId: Option[Long] = r.nextLongOption
+    val maybeUserId: Option[Long] = r.nextLongOption
+
+    for {
+      opinionId <- maybeOpinionId
+      userId <- maybeUserId
+    } yield OpinionLike(opinionId = opinionId, userId = userId)
+  }
+
 
 }
 
