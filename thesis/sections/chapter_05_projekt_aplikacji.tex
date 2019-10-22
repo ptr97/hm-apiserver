@@ -1,0 +1,129 @@
+\documentclass[../main.tex]{subfiles}
+
+\begin{document}
+\section{Projekt aplikacji oraz podstawy teoretyczne}
+W tej sekcji pracy autor chciałby skupić się na dokładniejszym opisaniu funkcjonalności aplikacji która została zaimplementowana oraz architekturze kodu w podejściu funkcyjnym. Niemożliwym jest to natomiast bez zdefiniowania czym tak naprawdę jest programowanie funkcyjne.
+
+
+\subsection{Czym jest programowanie funkcyjne?} 
+Programowanie funkcyjne jest filozofią i metodyką programowania opierającą się prostym założeniu, iż programy napisane w tym paradygmacie używają tylko i wyłącznie "czystych" funkcji (ang. pure functions) \cite{BOOK:FPinScala} - innymi słowy funkcji, których: 
+\begin{itemize}
+\item dane wyjściowe zależą tylko od danych wejściowych 
+\item nie posiadają efektów ubocznych.
+\end{itemize}
+\smallskip
+Funkcja posiada efekty uboczne jeśli robi coś innego niż zwykłe zwrócenie rezultatu - na przykład: 
+\begin{itemize}
+    \item modyfikuje zmienną,
+    \item modyfikuje stan struktury danych w miejscu,
+    \item rzuca wyjątek,
+    \item wypisuje dane na standardowe wyjście,
+    \item wypisuje dane do pliku,
+    \item wczytuje dane od użytkownika,
+    \item wczytuje dane z pliku.
+\end{itemize}
+\smallskip
+W jaki sposób zatem programy złożone z takich funkcji mogą być jakkolwiek przydatne? Otóż programowanie funkcyjne udostępnia specjalne struktury, które pozwalają nam opisać efekty uboczne, jakie chcemy wykonać i tworzyć programy komponując te efekty ze sobą.
+
+
+
+\subsubsection{Przykład programu z efektami ubocznymi}
+\begin{lstlisting}
+class Cafe { 
+  def buyCoffe(cc: CreditCard): Coffee = {
+    val cup = new Coffee()
+    cc.charge(cup.price)
+    cup
+  }
+}
+\end{lstlisting}
+% ====================  ===================== %
+% W tym miejscu chciałbym przedstawić przykład kodu z jednej z książek, aczkolwiek nie wiem czy jest to w porządku, być może powinienem przykład ten w jakiś znaczący sposób zmodyfikować? 
+\subsubsection{Funkcyjne rozwiązanie: usunięcie efektów ubocznych}
+\begin{lstlisting}
+class Cafe { 
+  def buyCoffe(cc: CreditCard): (Coffee, Charge) = {
+    val cup = new Coffee()
+    (cup, Charge(cc, cup.price))
+  }
+}
+\end{lstlisting}
+% ====================  ===================== %
+% Dopiszę tutaj komenatrz poźniej jeśli wyklaruje się pomysł odnośnie tego czy mogę użyć tego przykładu, czy też wymyśleć swój, czy wręcz przeciwnie - dopuszczam myśl, że zabrakeni miejsca na ten przykład...
+
+
+
+\subsubsection{Referencyjna transparentność (ang. Referential Transparency)}
+Co zyskujemy używając "czystych" funkcji? Dlaczego warto podejmować wysiłek i strukturyzować programy w ten sposób? Otóż używanie czystych funkcji daje nam własność, która nazywa się "referencyjna transparentność" (ang. referential transparency).
+Zdefiniowana jest ona w następujący sposób:
+\begin{center}
+\textit{Wyrażenie e jest "referencyjnie transparentne" w stosunku do programu p, jeżeli każde wystąpienie e w p może zostać zastąpione przez rezultat wykonania e bez zmiany w wyniku p.} \cite{BOOK:FPinScala} 
+\end{center}
+Aby lepiej zobrazować tą własność autor pozwolił sobie posłużyć się przykładem.
+Niech program p będzie zdefiniowany w następujący sposób:
+\begin{lstlisting}[caption=Przykładowy program w języku Scala.]
+val x: Int = ???
+
+val y: Int = x * x
+\end{lstlisting}
+Czy program ten jest referencyjnie transparentny? Odpowiedź brzmi: "To zależy". A dokładniej zależy to od wartości zmiennej \textit{x}. W przypadku pierwszym:
+\begin{lstlisting}[caption=Referencyjnie transparentny program.]
+val x: Int = 2
+
+val y: Int = x * x
+\end{lstlisting}
+program będzie referencyjnie transparentny - każde wystąpienie zmiennej x możemy z powodzeniem zastąpić jej wartością a wynik programu pozostanie bez zmian.
+Natomiast w drugim przypadku:
+\begin{lstlisting}[caption=Program który nie jest referencyjnie transparentny.]
+val x: Int = {
+  println("Hello, world")
+  2
+}
+
+val y: Int = x * x
+\end{lstlisting}
+program nie jest już referencyjnie transparentny z uwagi na to, iż zaobserwowany wynik z jego wykonania będzie inny w przypadku kiedy do zmiennej \textit{x} zostanie przypisana wartość wyrażenia oraz kiedy każde jej wystąpienie zastąpimy wyrażeniem z instrukcją wypisującą tekst na standardowe wyjście.\\\vspace{4ex}
+Do czego zatem możemy wykorzystać własność referencyjnej transparentności?
+
+\subsubsection{Lokalne rozumowanie (ang. Local reasoning)}
+Jest to własność, która pozwala się skupić na rozumowaniu części programu (np. funkcji) bez konieczności rozważania zewnętrznego kontekstu w jakim program jest wykonywany, bądź też stanu w jakim program aktualnie się znajduje. Cały program składa się zatem z kompozycji mniejszych części, które też są same w sobie programami. Debuggując taki system łatwiej jest znaleźć błąd w implementacji sprawdzając poprawność każdego z mniejszych programów który składa się na większą całość. Dzięki temu nie ma potrzeby pamiętania cały czas i zwracania uwagi na możliwe stany i scenariusze które nie dotyczą stricte części sprawdzanego programu. W dużym, złożonym systemie możliwość opierania się o tą własność jest nieoceniona.
+
+\subsubsection{Efekty uboczne, a efekty}
+We wcześniejszym paragrafie autor zanegował przydatność programów niemożnych do stworzenia efektów ubocznych w otaczającym świecie. Jaka byłaby przydatność z programu który nie może w żaden sposób komunikować się czy to z użytkownikiem czy z siecią internetową?\vspace{3ex}
+Programowanie funkcyjne nie polega na wyeliminowaniu efektów ubocznych, lecz na odsunięciu ich jak najpóźniej jest to możliwe. Jest to tak zwane wykonanie efektów "na końcu świata" (ang. "at the end of the world") \cite{WEBSITE:Fabio}. W kodzie programista pracuje natomiast z funkcyjnymi strukturami, które swoje korzenie mają w teorii kategorii\footnote{teoria matematyczna, mająca swoje pojęcia pierwotne, aksjomaty, definicje, twierdzenia, dowody i bardzo ważne zastosowania w wielu innych działach matematyki - na podstawie Wikipedii}, które opisują dany efekt ze świata zewnętrznego. Dzięki temu kod pozostaje niezanieczyszczony występowaniem efektów ubocznych, co skutkuje większą kontrolą nad możliwymi wynikami działania programu. Konstrukcje te ponadto ze względu na właściwości opisane w dalszej części niniejszej pracy komponują się ze sobą umożliwiając zbudowanie rozbudowanego systemu w całkowicie funkcyjnym paradygmacie. 
+
+\subsubsection{Testy}
+Opisywanie efektów ze świata zewnętrznego za pomocą funkcyjnych konstrukcji daje nam też możliwość łatwiejszego testowania kodu. Programista nie musi sprawdzać czy efekt uboczny zaszedł w świecie rzeczywistym ponieważ jego zadaniem jest tylko i wyłącznie stworzenie kodu dającego oczekiwane rezultaty dla odpowiednich danych wejściowych. Natomiast poprawne wykonanie tychże efektów, tak aby miały odzwierciedlenie w rzeczywistości leży w gestii twórców bibliotek lub języka udostępniających konstrukcje reprezentujące dany efekt uboczny. Co jest naturalnym następstwem powyższego stwierdzenia, nie są potrzebne specjalistyczne narzędzia służące do tworzenia testowych obiektów (na przykład testowych baz danych).
+
+\subsubsection{Podsumowanie}
+Właściwie to nie wiem czy ta podsekcja jest na obecny moment potrzebna w związku z raczej niewielką ilością tekstu zawartą powyżej.
+\vspace{15ex}
+
+
+
+
+
+\subsection{Architektura kodu aplikacji}
+Ważną dla mnie kwestią jest zaczęcie od struktury aplikacji - podziału na dwa pakiety - domain oraz infrastructure - a co za tym idzie separacji czysto funkcyjnego kodu jak i tego już mającego swoje efekty uboczne w otaczającym nas świecie.
+
+\subsubsection{Domain Driven Design}
+Nie obędzie się też zapewne od wzmianki o DDD.
+
+
+
+
+
+
+
+
+
+
+
+\subsection{Funkcjonalność aplikacji}
+
+\subsubsection{Diagram ERD}
+
+\subsubsection{Udostępnione endpointy}
+
+
+\end{document}
