@@ -7,7 +7,7 @@ import com.pwos.api.domain.users.UserInfo
 
 trait PlaceValidationAlgebra[F[_]] {
 
-  def doesNotExists(place: Place): EitherT[F, PlaceAlreadyExistsError, Unit]
+  def doesNotExist(place: Place): EitherT[F, PlaceAlreadyExistsError, Unit]
 
   def exists(placeId: Long): EitherT[F, PlaceNotFoundError.type, Unit]
 

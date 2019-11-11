@@ -10,7 +10,7 @@ import com.pwos.api.domain.users.UserInfo
 
 final class PlaceValidationInterpreter[F[_] : Monad](placeDAO: PlaceDAOAlgebra[F]) extends PlaceValidationAlgebra[F] with AuthValidation {
 
-  override def doesNotExists(place: Place): EitherT[F, PlaceAlreadyExistsError, Unit] = EitherT {
+  override def doesNotExist(place: Place): EitherT[F, PlaceAlreadyExistsError, Unit] = EitherT {
     placeDAO.findByName(place.name).map {
       case Some(_) => Left(PlaceAlreadyExistsError(place))
       case None => Right(())

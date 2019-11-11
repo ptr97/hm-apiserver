@@ -11,7 +11,7 @@ class PlaceService[F[_] : Monad](placeDAO: PlaceDAOAlgebra[F], placeValidation: 
   def create(userInfo: UserInfo, place: Place): EitherT[F, PlaceValidationError, Place] = {
     for {
       _ <- EitherT(Monad[F].pure(placeValidation.validateAdminAccess(userInfo)))
-      _ <- placeValidation.doesNotExists(place)
+      _ <- placeValidation.doesNotExist(place)
       newPlace <- EitherT.liftF(placeDAO.create(place))
     } yield newPlace
   }
