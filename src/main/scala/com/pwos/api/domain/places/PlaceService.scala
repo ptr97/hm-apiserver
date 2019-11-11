@@ -8,14 +8,17 @@ import com.pwos.api.domain.users.UserInfo
 
 class PlaceService[F[_] : Monad](placeDAO: PlaceDAOAlgebra[F], placeValidation: PlaceValidationAlgebra[F]) {
 
-  def create(userInfo: UserInfo, place: Place): EitherT[F, PlaceValidationError, Place] = for {
-    _ <- EitherT(Monad[F].pure(placeValidation.validateAdminAccess(userInfo)))
-    _ <- placeValidation.doesNotExists(place)
-    newPlace <- EitherT.liftF(placeDAO.create(place))
-  } yield newPlace
+  def create(userInfo: UserInfo, place: Place): EitherT[F, PlaceValidationError, Place] = {
+    for {
+      _ <- EitherT(Monad[F].pure(placeValidation.validateAdminAccess(userInfo)))
+      _ <- placeValidation.doesNotExists(place)
+      newPlace <- EitherT.liftF(placeDAO.create(place))
+    } yield newPlace
+  }
 
-  def get(id: Long): EitherT[F, PlaceNotFoundError.type, Place] =
+  def get(id: Long): EitherT[F, PlaceNotFoundError.type, Place] = {
     EitherT.fromOptionF(placeDAO.get(id), PlaceNotFoundError)
+  }
 
   def update(userInfo: UserInfo, placeId: Long, placeUpdateModel: PlaceUpdateModel): EitherT[F, PlaceValidationError, Place] = {
     type PlaceUpdate = Place => Option[Place]
