@@ -193,7 +193,6 @@ class OpinionService[F[_] : Monad](
   def reports(userInfo: UserInfo, opinionId: Long): EitherT[F, OpinionValidationError, List[ReportView]] = {
 
     def collectReportAuthors(reports: List[Report]): F[Map[Long, User]] = {
-      println(reports)
       val authorsIds: List[Long] = reports.map(_.authorId)
       val authorsF: F[List[User]] = userDAO.get(authorsIds)
 
