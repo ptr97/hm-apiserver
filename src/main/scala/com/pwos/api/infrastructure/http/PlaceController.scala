@@ -32,8 +32,8 @@ class PlaceController(placeService: PlaceService[DBIO])(implicit ec: ExecutionCo
           placeService.create(userInfo, place).value.unsafeRun map {
             case Right(createdPlace) => HttpOps.created(createdPlace)
             case Left(placeError) => placeError match {
-              case placeError: PlaceAlreadyExistsError => HttpOps.badRequest(placeError)
-              case placeError: PlacePrivilegeError.type => HttpOps.badRequest(placeError)
+              case placeAlreadyExistsError: PlaceAlreadyExistsError => HttpOps.badRequest(placeAlreadyExistsError)
+              case placePrivilegeError: PlacePrivilegeError.type => HttpOps.forbidden(placePrivilegeError)
               case _ => HttpOps.internalServerError()
             }
           }
@@ -61,7 +61,7 @@ class PlaceController(placeService: PlaceService[DBIO])(implicit ec: ExecutionCo
             case Right(updatedPlace) => HttpOps.ok(updatedPlace)
             case Left(placeError) => placeError match {
               case placeError: PlaceNotFoundError.type => HttpOps.badRequest(placeError)
-              case placeError: PlacePrivilegeError.type => HttpOps.badRequest(placeError)
+              case placeError: PlacePrivilegeError.type => HttpOps.forbidden(placeError)
               case _ => HttpOps.internalServerError()
             }
           }
@@ -78,7 +78,7 @@ class PlaceController(placeService: PlaceService[DBIO])(implicit ec: ExecutionCo
           case Right(false) => HttpOps.internalServerError()
           case Left(placeError) => placeError match {
             case placeError: PlaceNotFoundError.type => HttpOps.badRequest(placeError)
-            case placeError: PlacePrivilegeError.type => HttpOps.badRequest(placeError)
+            case placeError: PlacePrivilegeError.type => HttpOps.forbidden(placeError)
             case _ => HttpOps.internalServerError()
           }
         }
