@@ -101,3 +101,5 @@ def scalacOptionsSeq: Seq[String] = {
 }
 
 scalacOptions ++= scalacOptionsSeq
+
+fork in Test := true
