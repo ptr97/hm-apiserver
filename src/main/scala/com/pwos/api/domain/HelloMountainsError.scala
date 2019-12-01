@@ -3,10 +3,19 @@ package com.pwos.api.domain
 import com.pwos.api.domain.opinions.tags.Tag
 import com.pwos.api.domain.places.Place
 
+
 object HelloMountainsError {
 
   sealed trait HelloMountainsError extends Product with Serializable {
     def message: String
+  }
+
+  case object UnauthorizedError extends HelloMountainsError {
+    override def message: String = "The supplied authentication is not authorized to access this resource."
+  }
+
+  case object RouteNotFoundError extends HelloMountainsError {
+    override def message: String = "Bad request."
   }
 
   sealed trait PrivilegeError extends HelloMountainsError {

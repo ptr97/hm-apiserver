@@ -2,10 +2,14 @@ package com.pwos.api
 
 import akka.actor.ActorSystem
 import akka.http.scaladsl.Http
+import akka.http.scaladsl.server.AuthorizationFailedRejection
 import akka.http.scaladsl.server.Directives._
+import akka.http.scaladsl.server.RejectionHandler
 import akka.http.scaladsl.server.Route
 import akka.stream.ActorMaterializer
 import com.pwos.api.config.Config
+import com.pwos.api.domain.HelloMountainsError.RouteNotFoundError
+import com.pwos.api.domain.HelloMountainsError.UnauthorizedError
 import com.pwos.api.domain.authentication.AuthService
 import com.pwos.api.domain.opinions.OpinionService
 import com.pwos.api.domain.opinions.OpinionValidationAlgebra
@@ -29,6 +33,8 @@ import com.pwos.api.infrastructure.http.PlaceController
 import com.pwos.api.infrastructure.http.TagController
 import com.pwos.api.infrastructure.http.UserController
 import com.pwos.api.infrastructure.http.authentication.AuthController
+import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport._
+import io.circe.generic.auto._
 import slick.dbio.DBIO
 import slick.jdbc.MySQLProfile.backend.Database
 
@@ -47,6 +53,7 @@ object Server {
     implicit val executionContext: ExecutionContext = system.dispatcher
 
     implicit val db: Database = config.database
+    implicit val rejectionHandler: RejectionHandler = getRejectionHandler
 
     Http().bindAndHandle(routes, config.api.server.host, config.api.server.port)
       .onComplete {
@@ -70,6 +77,18 @@ object Server {
       tagRoutes ~
       opinionRoutes
     }
+  }
+
+  private def getRejectionHandler: RejectionHandler = {
+    RejectionHandler.newBuilder()
+      .handle {
+        case AuthorizationFailedRejection =>
+          complete(HttpOps.unauthorized(UnauthorizedError))
+      }
+      .handleNotFound {
+        complete(HttpOps.notFound(RouteNotFoundError))
+      }
+      .result()
   }
 
   private def testRoute(implicit ec: ExecutionContext): Route = {
