@@ -1,7 +1,6 @@
 package com.pwos.api
 
 import com.pwos.api.domain.PagingRequest
-
 import scala.collection.GenTraversableOnce
 
 
