@@ -73,7 +73,7 @@ object Server {
   }
 
   private def testRoutes(implicit ec: ExecutionContext): Route = {
-    def test: Route = path("/") {
+    def test: Route = path("") {
       get {
         complete("Welcome in Hello Mountains API!")
       }
