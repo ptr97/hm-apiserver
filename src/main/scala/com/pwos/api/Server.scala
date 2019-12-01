@@ -63,12 +63,23 @@ object Server {
 
   private def routes(implicit ec: ExecutionContext, database: Database): Route = {
     HttpOps.withRequestLogging {
+      testRoutes ~
       authRoutes ~
       userRoutes ~
       placeRoutes ~
       tagRoutes ~
       opinionRoutes
     }
+  }
+
+  private def testRoutes(implicit ec: ExecutionContext): Route = {
+    def test: Route = path("/") {
+      get {
+        complete("Welcome in Hello Mountains API!")
+      }
+    }
+
+    test
   }
 
   private def authRoutes(implicit ec: ExecutionContext, database: Database): Route = {
