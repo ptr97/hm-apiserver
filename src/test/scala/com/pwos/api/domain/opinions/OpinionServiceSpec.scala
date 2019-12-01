@@ -22,11 +22,11 @@ import com.pwos.api.infrastructure.dao.memory.MemoryPlaceDAOInterpreter
 import com.pwos.api.infrastructure.dao.memory.MemoryReportDAOInterpreter
 import com.pwos.api.infrastructure.dao.memory.MemoryTagDAOInterpreter
 import com.pwos.api.infrastructure.dao.memory.MemoryUserDAOInterpreter
-import org.scalatest.FunSpec
-import org.scalatest.Matchers
+import org.scalatest.funspec.AnyFunSpec
+import org.scalatest.matchers.should.Matchers
 
 
-class OpinionServiceSpec extends FunSpec with Matchers {
+class OpinionServiceSpec extends AnyFunSpec with Matchers {
 
   case class OpinionServiceSpecResources(
     opinionDAO: MemoryOpinionDAOInterpreter,

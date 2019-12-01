@@ -20,13 +20,13 @@ import com.pwos.api.infrastructure.http.versions._
 import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport._
 import io.circe.generic.auto._
 import org.scalatest.BeforeAndAfter
-import org.scalatest.FunSpec
-import org.scalatest.Matchers
+import org.scalatest.funspec.AnyFunSpec
+import org.scalatest.matchers.should.Matchers
 import org.scalatest.concurrent.ScalaFutures
 import slick.jdbc.MySQLProfile.backend.Database
 
 
-class PlaceIntegrationSpec extends FunSpec with Matchers with ScalatestRouteTest with ScalaFutures with BeforeAndAfter {
+class PlaceIntegrationSpec extends AnyFunSpec with Matchers with ScalatestRouteTest with ScalaFutures with BeforeAndAfter {
 
   val config: Config = Config.unsafeLoadTestConfig
   implicit val db: Database = config.database

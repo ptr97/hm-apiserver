@@ -28,8 +28,8 @@ import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport._
 import io.circe.generic.auto._
 import org.joda.time.DateTime
 import org.scalatest.BeforeAndAfter
-import org.scalatest.FunSpec
-import org.scalatest.Matchers
+import org.scalatest.funspec.AnyFunSpec
+import org.scalatest.matchers.should.Matchers
 import org.scalatest.concurrent.ScalaFutures
 import slick.jdbc.MySQLProfile.backend.Database
 
@@ -37,7 +37,7 @@ import scala.concurrent.Await
 import scala.concurrent.duration.Duration
 
 
-class OpinionIntegrationSpec extends FunSpec with Matchers with ScalatestRouteTest with ScalaFutures with BeforeAndAfter {
+class OpinionIntegrationSpec extends AnyFunSpec with Matchers with ScalatestRouteTest with ScalaFutures with BeforeAndAfter {
 
   val config: Config = Config.unsafeLoadTestConfig
   implicit val db: Database = config.database

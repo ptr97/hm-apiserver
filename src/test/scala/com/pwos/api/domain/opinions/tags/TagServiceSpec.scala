@@ -10,11 +10,11 @@ import com.pwos.api.domain.users.UserInfo
 import com.pwos.api.domain.users.UserRole
 import com.pwos.api.infrastructure.dao.memory.MemoryTagDAOInterpreter
 import com.pwos.api.infrastructure.dao.memory.MemoryUserDAOInterpreter
-import org.scalatest.FunSpec
-import org.scalatest.Matchers
+import org.scalatest.funspec.AnyFunSpec
+import org.scalatest.matchers.should.Matchers
 
 
-class TagServiceSpec extends FunSpec with Matchers {
+class TagServiceSpec extends AnyFunSpec with Matchers {
 
   private def getTestResources: (MemoryTagDAOInterpreter, TagService[Id]) = {
     val memoryUserDAO = MemoryUserDAOInterpreter()

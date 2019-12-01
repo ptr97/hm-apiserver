@@ -12,11 +12,11 @@ import com.pwos.api.domain.users.UserModels.CreateUserModel
 import com.pwos.api.domain.users.UserModels.UpdateUserCredentialsModel
 import com.pwos.api.domain.users.UserModels.UpdateUserStatusModel
 import com.pwos.api.infrastructure.dao.memory.MemoryUserDAOInterpreter
-import org.scalatest.FunSpec
-import org.scalatest.Matchers
+import org.scalatest.funspec.AnyFunSpec
+import org.scalatest.matchers.should.Matchers
 
 
-class UserServiceSpec extends FunSpec with Matchers {
+class UserServiceSpec extends AnyFunSpec with Matchers {
 
   private def getTestResources: (MemoryUserDAOInterpreter, UserService[Id]) = {
     val memoryUserDAO = MemoryUserDAOInterpreter()

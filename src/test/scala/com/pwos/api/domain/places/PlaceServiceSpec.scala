@@ -7,11 +7,11 @@ import com.pwos.api.domain.users.UserInfo
 import com.pwos.api.domain.users.UserRole
 import com.pwos.api.infrastructure.dao.memory.MemoryPlaceDAOInterpreter
 import com.pwos.api.infrastructure.dao.memory.MemoryUserDAOInterpreter
-import org.scalatest.FunSpec
-import org.scalatest.Matchers
+import org.scalatest.funspec.AnyFunSpec
+import org.scalatest.matchers.should.Matchers
 
 
-class PlaceServiceSpec extends FunSpec with Matchers {
+class PlaceServiceSpec extends AnyFunSpec with Matchers {
 
   private def getTestResources: (MemoryPlaceDAOInterpreter, PlaceService[Id]) = {
     val memoryUserDAO = MemoryUserDAOInterpreter()

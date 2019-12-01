@@ -6,11 +6,11 @@ import com.pwos.api.domain.users.User
 import com.pwos.api.domain.users.UserModels.LoginModel
 import com.pwos.api.domain.users.UserRole
 import com.pwos.api.infrastructure.dao.memory.MemoryUserDAOInterpreter
-import org.scalatest.FunSpec
-import org.scalatest.Matchers
+import org.scalatest.funspec.AnyFunSpec
+import org.scalatest.matchers.should.Matchers
 
 
-class AuthServiceSpec extends FunSpec with Matchers {
+class AuthServiceSpec extends AnyFunSpec with Matchers {
 
   private val userStephenPasswordPlain = "Password123"
   private val userStephenPasswordHashed = PasswordService.hash(userStephenPasswordPlain)
