@@ -106,3 +106,4 @@ fork in Test := true
 
 mainClass in assembly := Some("com.pwos.api.AppLauncher")
 test in assembly := {}
+assemblyJarName in assembly := "hm-apiserver-0.0.1-SNAPSHOT.jar"
