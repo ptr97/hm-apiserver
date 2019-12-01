@@ -3,11 +3,11 @@ organization := "com.pwos"
 version := "0.1"
 scalaVersion := "2.12.8"
 
-lazy val akkaHttpVersion          = "10.1.8"
-lazy val akkaVersion              = "2.5.22"
-lazy val akkaHttpCirceVersion     = "1.27.0"
-lazy val scalaTestVersion         = "3.0.8"
-lazy val scalaCheckVersion        = "1.14.0"
+lazy val akkaHttpVersion          = "10.1.10"
+lazy val akkaVersion              = "2.5.26"
+lazy val akkaHttpCirceVersion     = "1.29.1"
+lazy val scalaTestVersion         = "3.1.0"
+lazy val scalaCheckVersion        = "1.14.2"
 lazy val circeVersion             = "0.11.1"
 lazy val slickVersion             = "3.3.1"
 lazy val slickJodaMapperVersion   = "2.4.0"
@@ -103,3 +103,7 @@ def scalacOptionsSeq: Seq[String] = {
 scalacOptions ++= scalacOptionsSeq
 
 fork in Test := true
+
+mainClass in assembly := Some("com.pwos.api.AppLauncher")
+test in assembly := {}
+logLevel in assembly := Level.Debug
