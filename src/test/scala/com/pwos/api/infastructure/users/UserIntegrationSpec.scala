@@ -107,7 +107,7 @@ class UserIntegrationSpec extends AnyFunSpec with Matchers with ScalatestRouteTe
     }
   }
 
-  describe("Updating password - PUT /v1/users/me/password") {
+  ignore("Updating password - PUT /v1/users/me/password") {
     it("should update user password") {
       val userController = prepareContext
       val newPassword = "NewPassword123"
@@ -127,7 +127,7 @@ class UserIntegrationSpec extends AnyFunSpec with Matchers with ScalatestRouteTe
     }
   }
 
-  ignore("Deleting account - DELETE /v1/users/me") {
+  describe("Deleting account - DELETE /v1/users/me") {
     it("should delete user account") {
       val userController = prepareContext
       val request = Delete(s"/$v1/$USERS/me")
