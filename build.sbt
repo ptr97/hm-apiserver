@@ -106,4 +106,3 @@ fork in Test := true
 
 mainClass in assembly := Some("com.pwos.api.AppLauncher")
 test in assembly := {}
-logLevel in assembly := Level.Debug
