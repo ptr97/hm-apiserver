@@ -23,4 +23,10 @@ if ! [ -f $LOG_FILE ]; then
   touch $LOG_FILE
 fi
 
+PID=`ps -eaf | grep "java -jar ${JAR_NAME}" | grep -v grep | awk '{print $1}'`
+if [[ "" !=  "$PID" ]]; then
+  echo "killing $PID"
+  kill -9 ${PID}
+fi
+
 java -jar $JAR_NAME &> $LOG_FILE &
