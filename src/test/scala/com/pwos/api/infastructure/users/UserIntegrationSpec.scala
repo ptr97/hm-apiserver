@@ -127,7 +127,7 @@ class UserIntegrationSpec extends AnyFunSpec with Matchers with ScalatestRouteTe
     }
   }
 
-  describe("Deleting account - DELETE /v1/users/me") {
+  ignore("Deleting account - DELETE /v1/users/me") {
     it("should delete user account") {
       val userController = prepareContext
       val request = Delete(s"/$v1/$USERS/me")
