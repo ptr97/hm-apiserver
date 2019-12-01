@@ -8,7 +8,7 @@ LOG_FILE="output.log"
 JAR_DEST="./hm-apiserver/target/scala-2.12/${JAR_NAME}"
 WORK_DIR="./run_dir/"
 
-export SBT_OPTS="-XX:+CMSClassUnloadingEnabled -XX:MaxPermSize=2G -Xmx2G"
+export SBT_OPTS="-XX:+CMSClassUnloadingEnabled -Xmx2G"
 /usr/local/sbt/bin/sbt -Dsbt.log.noformat=true assembly
 
 cd ../
