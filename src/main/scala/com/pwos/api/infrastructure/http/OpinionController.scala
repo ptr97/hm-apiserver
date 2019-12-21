@@ -2,7 +2,6 @@ package com.pwos.api.infrastructure.http
 
 import akka.http.scaladsl.server.Directives._
 import akka.http.scaladsl.server.Route
-import com.pwos.api.domain.HelloMountainsError.OpinionNotFoundError
 import com.pwos.api.domain.HelloMountainsError._
 import com.pwos.api.domain.opinions.OpinionModels._
 import com.pwos.api.domain.opinions.OpinionService
