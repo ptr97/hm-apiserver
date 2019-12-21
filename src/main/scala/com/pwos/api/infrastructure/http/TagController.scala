@@ -53,12 +53,9 @@ class TagController(tagService: TagService[DBIO])(implicit ec: ExecutionContext,
         complete {
           tagService.create(userInfo, tag).value.unsafeRun map {
             case Right(tag) => HttpOps.created(tag)
-            case Left(tagError) =>
-              tagError match {
-                case tagError: TagAlreadyExistsError => HttpOps.badRequest(tagError)
-                case tagError: TagPrivilegeError.type => HttpOps.forbidden(tagError)
-                case _ => HttpOps.internalServerError()
-              }
+            case Left(tagError: TagAlreadyExistsError) => HttpOps.badRequest(tagError)
+            case Left(tagError: TagPrivilegeError.type) => HttpOps.forbidden(tagError)
+            case _ => HttpOps.internalServerError()
           }
         }
       }
@@ -71,12 +68,9 @@ class TagController(tagService: TagService[DBIO])(implicit ec: ExecutionContext,
         complete {
           tagService.updateTag(userInfo, tagId, updateTagModel).value.unsafeRun map {
             case Right(tag) => HttpOps.ok(tag)
-            case Left(tagError) =>
-              tagError match {
-                case tagError: TagNotFoundError.type => HttpOps.badRequest(tagError)
-                case tagError: TagPrivilegeError.type => HttpOps.forbidden(tagError)
-                case _ => HttpOps.internalServerError()
-              }
+            case Left(tagError: TagNotFoundError.type) => HttpOps.badRequest(tagError)
+            case Left(tagError: TagPrivilegeError.type) => HttpOps.forbidden(tagError)
+            case _ => HttpOps.internalServerError()
           }
         }
       }

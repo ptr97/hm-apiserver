@@ -98,11 +98,9 @@ class UserController(userService: UserService[DBIO])(implicit ec: ExecutionConte
         complete {
           userService.updateStatus(userInfo, userId, updateStatusModel).value.unsafeRun map {
             case Right(user) => HttpOps.ok(user)
-            case Left(userError) => userError match {
-              case userError: UserNotFoundError.type => HttpOps.notFound(userError)
-              case userError: UserPrivilegeError.type => HttpOps.forbidden(userError)
-              case _ => HttpOps.internalServerError()
-            }
+            case Left(userError: UserNotFoundError.type) => HttpOps.notFound(userError)
+            case Left(userError: UserPrivilegeError.type) => HttpOps.forbidden(userError)
+            case _ => HttpOps.internalServerError()
           }
         }
       }

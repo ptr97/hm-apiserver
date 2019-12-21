@@ -2,6 +2,7 @@ package com.pwos.api.infrastructure.http
 
 import akka.http.scaladsl.server.Directives._
 import akka.http.scaladsl.server.Route
+import com.pwos.api.domain.HelloMountainsError.OpinionNotFoundError
 import com.pwos.api.domain.HelloMountainsError._
 import com.pwos.api.domain.opinions.OpinionModels._
 import com.pwos.api.domain.opinions.OpinionService
@@ -46,11 +47,9 @@ class OpinionController(opinionService: OpinionService[DBIO])(implicit ec: Execu
       complete {
         opinionService.getOpinionView(userInfo, opinionId).value.unsafeRun map {
           case Right(opinionView) => HttpOps.ok(opinionView)
-          case Left(opinionError) => opinionError match {
-            case opinionNotFoundError: OpinionNotFoundError.type => HttpOps.notFound(opinionNotFoundError)
-            case opinionPrivilegeError: OpinionPrivilegeError.type => HttpOps.forbidden(opinionPrivilegeError)
-            case _ => HttpOps.internalServerError()
-          }
+          case Left(opinionNotFoundError: OpinionNotFoundError.type) => HttpOps.notFound(opinionNotFoundError)
+          case Left(opinionPrivilegeError: OpinionPrivilegeError.type) => HttpOps.forbidden(opinionPrivilegeError)
+          case _ => HttpOps.internalServerError()
         }
       }
     }
@@ -61,11 +60,9 @@ class OpinionController(opinionService: OpinionService[DBIO])(implicit ec: Execu
       complete {
         opinionService.reports(userInfo, opinionId).value.unsafeRun map {
           case Right(reports) => HttpOps.ok(reports)
-          case Left(opinionError) => opinionError match {
-            case opinionNotFoundError: OpinionNotFoundError.type => HttpOps.notFound(opinionNotFoundError)
-            case opinionPrivilegeError: OpinionPrivilegeError.type => HttpOps.forbidden(opinionPrivilegeError)
-            case _ => HttpOps.internalServerError()
-          }
+          case Left(opinionNotFoundError: OpinionNotFoundError.type) => HttpOps.notFound(opinionNotFoundError)
+          case Left(opinionPrivilegeError: OpinionPrivilegeError.type) => HttpOps.forbidden(opinionPrivilegeError)
+          case _ => HttpOps.internalServerError()
         }
       }
     }
@@ -100,11 +97,9 @@ class OpinionController(opinionService: OpinionService[DBIO])(implicit ec: Execu
         opinionService.deleteOpinion(userInfo, opinionId).value.unsafeRun map {
           case Right(true) => HttpOps.ok("Opinion deleted")
           case Right(false) => HttpOps.internalServerError()
-          case Left(opinionError) => opinionError match {
-            case opinionNotFoundError: OpinionNotFoundError.type => HttpOps.notFound(opinionNotFoundError)
-            case opinionDeletePrivilegeError: OpinionOwnershipError.type => HttpOps.forbidden(opinionDeletePrivilegeError)
-            case _ => HttpOps.internalServerError()
-          }
+          case Left(opinionNotFoundError: OpinionNotFoundError.type) => HttpOps.notFound(opinionNotFoundError)
+          case Left(opinionDeletePrivilegeError: OpinionOwnershipError.type) => HttpOps.forbidden(opinionDeletePrivilegeError)
+          case _ => HttpOps.internalServerError()
         }
       }
     }
@@ -116,11 +111,9 @@ class OpinionController(opinionService: OpinionService[DBIO])(implicit ec: Execu
         complete {
           opinionService.updateOpinion(userInfo, opinionId, updateOpinionModel).value.unsafeRun map {
             case Right(opinion) => HttpOps.ok(opinion)
-            case Left(opinionValidationError) => opinionValidationError match {
-              case opinionNotFoundError: OpinionNotFoundError.type => HttpOps.notFound(opinionNotFoundError)
-              case opinionDeletePrivilegeError: OpinionOwnershipError.type => HttpOps.forbidden(opinionDeletePrivilegeError)
-              case _ => HttpOps.internalServerError()
-            }
+            case Left(opinionNotFoundError: OpinionNotFoundError.type) => HttpOps.notFound(opinionNotFoundError)
+            case Left(opinionUpdatePrivilegeError: OpinionOwnershipError.type) => HttpOps.forbidden(opinionUpdatePrivilegeError)
+            case _ => HttpOps.internalServerError()
           }
         }
       }
