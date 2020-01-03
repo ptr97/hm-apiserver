@@ -39,16 +39,16 @@ object HelloMountainsError {
 
   case class IncorrectUserNameError(incorrectUserName: String) extends UserValidationError {
     override def message: String =
-      s"""Provided username: $incorrectUserName is incorrect. It should be at least 3 characters long.""".stripMargin
+      s"Provided username: $incorrectUserName is incorrect. It should be at least 3 characters long."
   }
 
   case object IncorrectPasswordError extends UserValidationError {
     override def message: String =
-      """Provided password is incorrect. Password should have at least one capital letter and digit."""
+      "Provided password is incorrect. Password should have at least one capital letter and digit."
   }
 
   case object PasswordsIncompatibleError extends UserValidationError {
-    override def message: String = """Provided passwords are different."""
+    override def message: String = "Provided passwords are different."
   }
 
   case class UserWithSameNameAlreadyExistsError(name: String) extends UserValidationError {
@@ -69,7 +69,7 @@ object HelloMountainsError {
   }
 
   case class PlaceAlreadyExistsError(place: Place) extends PlaceValidationError {
-    override def message: String = s"""Place with name ${place.name} already exists."""
+    override def message: String = s"Place with name ${place.name} already exists."
   }
 
   case object PlacePrivilegeError extends PlaceValidationError with PrivilegeError
@@ -80,7 +80,7 @@ object HelloMountainsError {
   case object TagPrivilegeError extends TagValidationError with PrivilegeError
 
   case class TagAlreadyExistsError(tag: Tag) extends TagValidationError {
-    override def message: String = s"""Tag with name ${tag.name} already exists."""
+    override def message: String = s"Tag with name ${tag.name} already exists."
   }
 
   case object TagNotFoundError extends TagValidationError {
