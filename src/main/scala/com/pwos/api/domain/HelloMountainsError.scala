@@ -39,14 +39,12 @@ object HelloMountainsError {
 
   case class IncorrectUserNameError(incorrectUserName: String) extends UserValidationError {
     override def message: String =
-      s"""Provided username: $incorrectUserName is incorrect.
-         |It should be at least 3 character long.""".stripMargin
+      s"""Provided username: $incorrectUserName is incorrect. It should be at least 3 character long.""".stripMargin
   }
 
   case object IncorrectPasswordError extends UserValidationError {
     override def message: String =
-      """Provided password is incorrect.
-        |Password should have at least one capital letter and digit."""
+      """Provided password is incorrect. Password should have at least one capital letter and digit."""
   }
 
   case object PasswordsIncompatibleError extends UserValidationError {
