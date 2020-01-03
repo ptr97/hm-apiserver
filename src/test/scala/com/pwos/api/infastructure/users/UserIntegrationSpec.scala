@@ -107,7 +107,7 @@ class UserIntegrationSpec extends AnyFunSpec with Matchers with ScalatestRouteTe
     }
   }
 
-  ignore("Updating password - PUT /v1/users/me/password") {
+  describe("Updating password - PUT /v1/users/me/password") {
     it("should update user password") {
       val userController = prepareContext
       val newPassword = "NewPassword123"
